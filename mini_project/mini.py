@@ -168,16 +168,6 @@ for i in tqdm(range(len(df))):
 
 # 27 clean columns Credit_Score
 
-# Index(['ID', '', '', '', '', '', '',
-#        '', '', '',
-#        '', '', '', 'Type_of_Loan',
-#        '', '', 'Changed_Credit_Limit',
-#        'Num_Credit_Inquiries', 'Credit_Mix', 'Outstanding_Debt',
-#        'Credit_Utilization_Ratio', 'Credit_History_Age',
-#        'Payment_of_Min_Amount', 'Total_EMI_per_month',
-#        'Amount_invested_monthly', 'Payment_Behaviour', 'Monthly_Balance',
-#        'Credit_Score'],
-#       dtype='object')
 
 
 df['Age'] = df['Age'].astype('float32')
