@@ -3,6 +3,8 @@ import numpy as np
 import seaborn as sns
 from tqdm import trange, tqdm
 import matplotlib.pyplot as plt
+'''check'''
+
 
 train_path = r'train.csv'
 test_path = r'test.csv'
