@@ -23,7 +23,11 @@ df = df.drop(['Unnamed: 0'], axis=1)
 df_to_train = df[~df['Amount_invested_monthly'].isnull()]
 df_to_train = df_to_train[~[df_to_train['Amount_invested_monthly'] == 10000.00000][0]]
 df_to_train = df_to_train[[df_to_train['Monthly_Balance'] < 2000][0]]
-# df_to_train['Annual_Income'] = np.log(df_to_train['Annual_Income'])
+
+# index_null_list = list(df.index[df['Annual_Income'] > 200000])
+# for i in tqdm(index_null_list):
+#     df_to_train.loc[i, 'Annual_Income'] = df['Annual_Income'][df['Customer_ID'] == df['Customer_ID'][i]].mode()[0]
+
 
 
 
@@ -49,9 +53,12 @@ intercept = reg.intercept_
 
 
 
-a = reg.predict(x_test[1:2])
 print('end')
-
+# prediction = []
+# for i in tqdm(range(0, len(x_test))):
+#     y_p = reg.predict(x_test[i:i+1])
+#     prediction.append(y_p)
+# loss = np.square(np.array(y_test) - np.array(prediction)).mean()**0.5
 
 # sns.histplot(df.Annual_Income,log_scale=True)
 # # plt.waitforbuttonpress()
@@ -64,4 +71,4 @@ print('end')
 # sns.boxplot(df_to_train.Monthly_Balance)
 # # plt.waitforbuttonpress()
 # plt.show()
-# z = df['Annual_Income'].groupby(df['Annual_Income']).count()
+z = df['Annual_Income'].groupby(df['Annual_Income']).count()
