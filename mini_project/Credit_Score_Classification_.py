@@ -1,14 +1,18 @@
 import pandas as pd
 import numpy as np
 import seaborn as sns
+from sqlalchemy.orm.loading import instances
 from tqdm import trange, tqdm
 import matplotlib.pyplot as plt
+import os
 
 
 train_path = r'train.csv'
 test_path = r'test.csv'
-train_df = pd.read_csv(train_path)
+train_df = pd.read_csv(train_path,low_memory=False)
 test_df = pd.read_csv(test_path)
+train_targets=train_df.iloc[:,-1]
+train_df=train_df.iloc[:,:-1]
 train_df.info()
 train_df.isna().sum()
 # numeric columns dtype is object, so we need to convert it to integer type
@@ -106,7 +110,7 @@ for column in tqdm(range(len(columns_to))):
         else:
             start_check_index = unknown_val_index - 8
 
-        # customer_id_index=train_df.index[train_df.loc[]]
+
         train_df.loc[unknown_val_index, columns_to[column]] = (
             train_df.loc[start_check_index:unknown_val_index + 8, columns_to[column]][
                 train_df.loc[start_check_index:unknown_val_index + 8, 'Customer_ID'] == customer_id]).drop(
@@ -118,8 +122,17 @@ instance_to_fill = train_df.index[pd.isnull(train_df.loc[:, 'Credit_History_Age'
 _ = train_df.loc[instance_to_convert, 'Credit_History_Age'].str.split(' ')
 train_df.loc[instance_to_convert, 'Credit_History_Age'] = (_.str.get(0)).astype('int32') * 12 + (_.str.get(3)).astype(
     'int32')
-
 #
+'''fill mising values in credit age feature'''
+inst_nan_credithist=train_df.index[train_df.Credit_History_Age.isnull()]
+credit_age_values=train_df.loc[:,['Credit_History_Age','Customer_ID']].drop(inst_nan_credithist,axis=0)
+customerid=None
+index_min_age=None
+# todo: improve o()
+for i in tqdm(inst_nan_credithist):
+    customerid=train_df.loc[i, 'Customer_ID']
+    index_min_age = credit_age_values[credit_age_values.Customer_ID==customerid].sort_values('Credit_History_Age').index[0]
+    train_df.loc[i, 'Credit_History_Age']= (i-index_min_age)+credit_age_values.loc[index_min_age,'Credit_History_Age']
 
 '''extricate loans types to convert loans types to columns '''
 unique_loans_types = []
@@ -138,12 +151,9 @@ train_df.drop('Type_of_Loan', inplace=True, axis=1)
 train_df.rename(columns={'Credit_History_Age': 'Credit_Months_History_Age'})
 train_df = pd.concat([train_df, get_dummies], axis=1)
 
-train_df.drop(train_df.iloc[:, 27], axis=1, inplace=True)
-col = [7, 8, 15, 19, 22, 23, 25, 26]
-col_num_check = train_df.iloc[:, col].copy()
-col_to_float = ['Outstanding_Debt', 'Credit_History_Age', 'Amount_invested_monthly', 'Monthly_Balance',
-                'Annual_Income', 'Changed_Credit_Limit']
-col_to_int = ['Num_of_Loan', 'Num_of_Delayed_Payment']
+train_df.drop(train_df.iloc[:, 26], axis=1, inplace=True)
+
+
 
 
 '''drop not important columns' we can do feature engineering on name column by classification by sex '''
@@ -151,31 +161,28 @@ train_df.drop(['ID', 'Name', 'SSN'], axis=1, inplace=True)
 train_df.drop(['Customer_ID', 'Month', 'Payment_Behaviour'], axis=1, inplace=True)
 
 
-get_dum_col = [1, 12, 16, 20]
-dumdum = pd.get_dummies(train_df.iloc[:, get_dum_col])
+get_dum_col = ['Occupation', 'Credit_Mix', 'Payment_of_Min_Amount']
+dumdum = pd.get_dummies(train_df.loc[:, get_dum_col])
 train_df = pd.concat([train_df, dumdum], axis=1)
-train_df.drop(train_df.iloc[:, get_dum_col], axis=1, inplace=True)
+train_df.drop(train_df.loc[:, get_dum_col], axis=1, inplace=True)
 
-
-index_null_list = list(train_df.index[train_df['Credit_History_Age'].isnull()])
-for i in tqdm(index_null_list):
-    if i % 8 != 0:
-        train_df.loc[i, 'Credit_History_Age'] = train_df['Credit_History_Age'][i - 1] + 1
-    else:
-        train_df.loc[i, 'Credit_History_Age'] = train_df['Credit_History_Age'][i + 1] - 1
 
 train_df.iloc[:, :] = train_df.iloc[:, :].replace('nan', None)
-# train_df.iloc[:,[8,16]]=train_df.iloc[:,[8,16]].replace('nan',None)
+
+# todo: improve dtype convert
+
 train_df.iloc[:, 15] = train_df.iloc[:, 15].astype('str').replace('10000', None)
 train_df.iloc[:, 15] = train_df.iloc[:, 15].replace('None', None)
 train_df.iloc[:, 15] = train_df.iloc[:, 15].astype('float32')
 train_df.iloc[:, 16] = train_df.iloc[:, 16].astype('float32')
 train_df.iloc[train_df.index[train_df.iloc[:, 16].astype('float32') > 5000000000], 16] = None
 train_df.iloc[:, :] = train_df.iloc[:, :].replace('nan', None)
-# train_df.iloc[train_df.iloc[:,16].astype('str').index[train_df.iloc[:,16].str.startswith('33333333')],16]=None
 train_df.iloc[:, 17:35] = train_df.iloc[:, 17:35].astype('int32')
 '''predict missing values'''
 instances_with_null = train_df.index[train_df.isnull().sum(axis=1) > 0]
 columns_with_null = train_df.columns[train_df.isnull().sum() > 0]
 instances_to_predict = train_df.iloc[instances_with_null, :]
-# train_df.drop(instances_with_null,axis=0, inplace=True)
+train_df=pd.concat([train_df, train_targets],axis=1)
+
+# export as csv_file
+train_df.to_csv('train_df.csv', index=False)
