@@ -8,52 +8,101 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
-train_path = r'train_df.csv'
 
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn import svm
+
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+
+from tensorflow import keras
+from tensorflow.keras import layers
+from numpy import loadtxt
+from keras.models import Sequential
+from keras.layers import Dense
+
+
+train_path = r'train_df.csv'
+#todo train_df without get_dummies columns
+#todo Credit_Score - get_dummies good no good
 train_df = pd.read_csv(train_path)
 train_df = train_df.dropna()
-train_df = train_df.drop(['Unnamed: 0'], axis=1)
 
 
-X = train_df.drop(['Credit_Score_Standard'], axis=1)
-y = train_df['Credit_Score_Standard']
+X = train_df.drop(['Credit_Score'], axis=1)
+y = train_df['Credit_Score']
 
-pca = PCA(n_components=54)
-pca.fit(X)
-X = pca.fit_transform(X)
+# pca = PCA(n_components=54)
+# pca.fit(X)
+# X = pca.fit_transform(X)
 
-x_train, x_val, y_train, y_val = train_test_split(X, y, test_size=0.1)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, shuffle=True)
 
-random_forest = RandomForestClassifier(random_state=42)
-# print(cross_val_score(random_forest, X, y))
-parameters = {'max_depth': [1, 2]}
-clf = GridSearchCV(random_forest, parameters, scoring='accuracy')
-clf.fit(x_train, y_train)
-print(f'best_score {clf.best_score_} best_params {clf.best_params_}')
+'''check random forest model'''
+# random_forest = RandomForestClassifier(random_state=42, n_estimators=50)
+#
+# parameters = {'max_depth': [10, 8]}
+# clf = GridSearchCV(random_forest, parameters, scoring='accuracy')
+# clf.fit(X_train, y_train)
+# print(f'best_score {clf.best_score_} best_params {clf.best_params_}')
 
-
-def predict_test(num):
-    prediction = []
-    for i in tqdm(range(0, num)):
-        y_p = clf.best_estimator_.predict(X[i:i+1])
-        prediction.append(y_p[0])
-    print(f'{prediction}\n{list(y[:num])}')
-
-    return prediction
-
-def predict_val(data, y):
-    prediction = []
-    for i in tqdm(range(0, len(data))):
-        y_p = clf.best_estimator_.predict(X[i:i+1])
-        prediction.append(y_p[0])
-    # print(f'{prediction}\n{list(y_val)}')
-
-    print(f'accuracy val {(prediction == y_val).sum()/len(x_val)} accuracy train {clf.best_score_}')
-
-    return prediction
+'''check  Gradient Boosting model'''
+# Gradient_Boosting = GradientBoostingClassifier(learning_rate=1.0, random_state=0')
+#
+# parameters = {'max_depth': [0, 1], 'n_estimators': [99, 100]}
+# clf = GridSearchCV(Gradient_Boosting, parameters, scoring='accuracy')
+# clf.fit(X_train, y_train)
+# print(f'best_score {clf.best_score_} best_params {clf.best_params_}')
+#
+# '''check  SVM model'''
+# svm = svm.SVC(kernel='rbf')
+#
+# parameters = {'C': [1], 'degree': [3]}
+# clf = GridSearchCV(svm, parameters, scoring='accuracy')
+# clf.fit(X_train, y_train)
+# print(f'best_score {clf.best_score_} best_params {clf.best_params_}')
 
 
-predict_val(x_val, y_val)
+#
+# clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
+# clf.fit(X, y)
 
-# test = predict_test(20)
+# #todo NN wite keras
+#
+# define the keras model
+model = Sequential()
+model.add(Dense(12, input_shape=(56,), activation='relu'))
+model.add(Dense(8, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))
+# compile the keras model
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+# fit the keras model on the dataset
+model.fit(X_train, y_train, epochs=20, batch_size=10)
+# evaluate the keras model
+_, accuracy = model.evaluate(X_train, y_train)
+print('Accuracy: %.2f' % (accuracy*100))
 
+# def predict_test(num):
+#     prediction = []
+#     for i in tqdm(range(0, num)):
+#         y_p = clf.best_estimator_.predict(X[i:i+1])
+#         prediction.append(y_p[0])
+#     print(f'{prediction}\n{list(y[:num])}')
+#
+#     return prediction
+#
+# def predict_val(data, y):
+#     prediction = []
+#     for i in tqdm(range(0, len(X_val))):
+#         y_p = clf.best_estimator_.predict(X[i:i+1])
+#         prediction.append(y_p[0])
+#     # print(f'{prediction}\n{list(y_val)}')
+#
+#     print(f'accuracy val {(prediction == y_val).sum()/len(X_val)} accuracy train {clf.best_score_}')
+#
+#     return prediction
+#
+# # test = predict_test(20)
+#
+# predict_val(X_val, y_val)
