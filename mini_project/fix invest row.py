@@ -13,7 +13,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 # from torchvision import datasets, transforms
 from tqdm import trange, tqdm
-
+from sklearn.ensemble import RandomForestRegressor
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using {device} device")
@@ -46,33 +46,56 @@ describe = df_to_train.describe()
 
 
 class Model(nn.Module):
-    def __init__(self,input_size,num_classes=3):
+    def __init__(self,input_size,num_classes):
         super(Model,self).__init__()
-        self.fc1=nn.Linear(input_size,50)
-        self.fc2=nn.Linear(50,num_classes)
+        self.fc1=nn.Linear(input_size,210)
+        self.fc2=nn.Linear(210,num_classes)
 
     def forward(self,x):
         x=nn.functional.relu(self.fc1(x))
         x=self.fc2(x)
         return x
+#
+# class Dataset(torch.utils.data.Dataset):
+#     'Characterizes a dataset for PyTorch'
+#     def __init__(self, list_IDs, labels):
+#         'Initialization'
+#         self.labels = labels
+#         self.list_IDs = list_IDs
+#
+#     def __len__(self):
+#         'Denotes the total number of samples'
+#         return len(self.list_IDs)
+#
+#     def __getitem__(self, index):
+#         'Generates one sample of data'
+#         # Select sample
+#         ID = self.list_IDs[index]
+#
+#         # Load data and get label
+#         X = torch.load('data/' + ID + '.pt')
+#         y = self.labels[ID]
+#
+#         return X, y
 
-model=Model(784,10)
-x=torch.randn(64,784)
-print(model(x).shape)
+df_to_train=pd.get_dummies(df_to_train)
+df_to_train=df_to_train.astype(np.float32)
+# x=torch.randn(64,784)
+# print(model(x).shape)
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 '''Hyperparameters'''
 input_size=df_to_train.shape[1]-1
 num_classes=1
-learning_rate=0.001
-batch_size=1000
-num_epochs=1
+learning_rate=0.01
+batch_size=100
+num_epochs=20
 '''load data'''
-df_to_train=pd.get_dummies(df_to_train)
-df_to_train=df_to_train.astype(np.float64)
 target=pd.DataFrame(df_to_train[columns_with_null[0]])
 x_train,x_test,y_train,y_test=train_test_split(df_to_train.drop(columns_with_null[0],axis=1),target,random_state=42)
-train_loader=DataLoader(dataset=tuple(zip(x_train.to_numpy(),y_train.to_numpy())),batch_size=batch_size,shuffle=True)
-test_loader=DataLoader(dataset=tuple(zip(x_test.to_numpy(),y_test.to_numpy())),batch_size=batch_size,shuffle=True)
+# train_set=Dataset(x)
+# test_set=Dataset()
+train_loader=DataLoader(dataset=tuple(zip(torch.tensor(x_train.to_numpy()),torch.tensor(y_train.to_numpy()))),batch_size=batch_size,shuffle=True)
+test_loader=DataLoader(dataset=tuple(zip(torch.tensor(x_test.to_numpy()),torch.tensor(y_test.to_numpy()))),batch_size=batch_size,shuffle=True)
 '''Initialize network'''
 model=Model(input_size=input_size,num_classes=num_classes).to(device)
 '''loss and optimizer'''
@@ -109,13 +132,12 @@ def check_accuracy(loader,model):
 
             scores=model(x)
             _,predictions=scores.max(1)
-            num_correct+=(predictions==y).sum()
+            num_correct+=(np.abs(predictions-y)).sum()
             num_samples+=predictions.size(0)
 
-        print(f'got {num_correct}/{num_samples} with accuracy {float(num_correct)/float(num_samples)*100:.2f}')
+        print(f'got {num_correct/num_samples} with accuracy {float(num_correct)/float(num_samples)*100:.2f}')
 
     model.train()
-    return acc
 check_accuracy(train_loader,model)
 check_accuracy(test_loader,model)
 
@@ -182,3 +204,5 @@ check_accuracy(test_loader,model)
 #     optimizer.step()
 #
 #
+regressor = RandomForestRegressor(n_estimators = 100, random_state = 42)
+regressor.fit(x_train, y_train)
