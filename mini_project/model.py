@@ -9,18 +9,19 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 
+
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn import svm
 
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from numpy import loadtxt
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense,Dropout,Activation
 
 
 train_path = r'train_df.csv'
@@ -31,25 +32,22 @@ train_df = train_df.dropna()
 #todo train_df without get_dummies columns
 # train_df['Credit_Score']= pd.get_dummies(train_df['Credit_Score'])['Good']
 
-for i in tqdm(train_df.index):
-    if train_df['Credit_Score'].loc[i][0] == 'Standard':
-        train_df['Credit_Score'][i] = 0
-    elif train_df['Credit_Score'].loc[i] == 'Good':
-        train_df['Credit_Score'][i] = 1
-    else:
-        train_df['Credit_Score'][i] = 2
+# convert_dict={'Poor':0,'Standard':1,'Good':2}
+# for (label,num) in convert_dict.items():
+#     train_df.loc[train_df.index[train_df.loc[:,'Credit_Score']==label],'Credit_Score']=float(num)
 
-train_df['Credit_Score'] = train_df['Credit_Score'].astype('float32')
+# train_df['Credit_Score'] = train_df['Credit_Score'].astype('float32')
 #todo Credit_Score - get_dummies good no good
 
 X = train_df.drop(['Credit_Score'], axis=1)
 y = train_df['Credit_Score']
+y=pd.get_dummies(y)
 
 # pca = PCA(n_components=54)
 # pca.fit(X)
 # X = pca.fit_transform(X)
 
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, shuffle=True)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.25, random_state=42)
 
 '''check random forest model'''
 # random_forest = RandomForestClassifier(random_state=42, n_estimators=50)
@@ -84,14 +82,17 @@ X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, shuffle=T
 #
 # define the keras model
 model = Sequential()
-model.add(Dense(12, input_shape=(56,), activation='relu'))
-model.add(Dense(8, activation='relu'))
-model.add(Dense(11, activation='relu'))
-model.add(Dense(1, activation='softmax'))
+model.add(Dense(320, activation='relu', input_dim=57))
+model.add(Dropout(0.3))
+model.add(Dense(320 ,activation='relu'))
+model.add(Dropout(0.3))
+model.add(Dense(3, activation='softmax'))
+# model.add(Dense(1, activation='softmax'))
 # compile the keras model
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+# tf.keras.optimizers.Adagrad
+model.compile(loss='categorical_crossentropy', optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), metrics=['accuracy'])
 # fit the keras model on the dataset
-history = model.fit(X_train, y_train, epochs=5, batch_size=10)
+history = model.fit(X_train, y_train, epochs=20, batch_size=1000)
 # evaluate the keras model
 _, accuracy = model.evaluate(X_train, y_train)
 print('Accuracy: %.2f' % (accuracy*100))
