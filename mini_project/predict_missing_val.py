@@ -10,22 +10,26 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import RobustScaler, StandardScaler
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader,Dataset
 # from torchvision import datasets, transforms
 from tqdm import trange, tqdm
+from torch.utils.tensorboard import SummaryWriter
+import torchvision
+
+writer=SummaryWriter('runs/pre_pred_val')
 
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"Using {device} device")
 
 # import Credit_Score_Classification.py
 
 path = r'train_df.csv'
 train_df = pd.read_csv('train_df.csv')
-
+'''convert target values to numbers: poor:0 ,standard:1, good:2'''
 # Payment_of_Min_Amount_get_dummies = pd.get_dummies(df['Payment_of_Min_Amount'], drop_first=True)
 # df = pd.concat([df, Payment_of_Min_Amount_get_dummies], axis=1)
-
+convert_dict={'Poor':0,'Standard':1,'Good':2}
+for (label,num) in convert_dict.items():
+    train_df.loc[train_df.index[train_df.loc[:,'Credit_Score']==label],'Credit_Score']=float(num)
 
 # df = df.astype('float64')
 #
@@ -45,79 +49,119 @@ df_to_train = train_df.drop(instances_with_null, axis=0)
 describe = df_to_train.describe()
 
 
+# def objective()
+
+# df_to_train=pd.get_dummies(df_to_train)
 class Model(nn.Module):
-    def __init__(self,input_size,num_classes=3):
+    def __init__(self,input_size,num_classes):
         super(Model,self).__init__()
-        self.fc1=nn.Linear(input_size,50)
-        self.fc2=nn.Linear(50,num_classes)
+        self.fc1=nn.Linear(input_size,1700)
+        self.fc2=nn.Dropout(0.5)
+        self.fc3=nn.Linear(1700,input_size)
+        self.fc4=nn.Linear(input_size,num_classes)
 
     def forward(self,x):
-        x=nn.functional.relu(self.fc1(x))
+        x=nn.functional.leaky_relu(self.fc1(x))
         x=self.fc2(x)
+        x=self.fc3(x)
+        x=self.fc4(x)
         return x
 
-model=Model(784,10)
-x=torch.randn(64,784)
-print(model(x).shape)
+class Df(Dataset):
+    def __init__(self):
+        self.x=torch.tensor(x_train,dtype=torch.float32)
+        self.y=torch.tensor(y_train.to_numpy(),dtype=torch.float32)
+        self.instances=self.x.shape[0]
+
+    def __getitem__(self, index):
+        return self.x[index],self.y[index]
+
+    def __len__(self):
+        return self.instances
+    df_to_train=df_to_train.astype(np.float32)
+
+
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Using {device} device")
 '''Hyperparameters'''
-input_size=df_to_train.shape[1]-1
 num_classes=1
-learning_rate=0.001
-batch_size=1000
-num_epochs=1
+learning_rate=0.0001
+batch_size=100
+num_epochs=20
 '''load data'''
-df_to_train=pd.get_dummies(df_to_train)
-df_to_train=df_to_train.astype(np.float64)
-target=pd.DataFrame(df_to_train[columns_with_null[0]])
-x_train,x_test,y_train,y_test=train_test_split(df_to_train.drop(columns_with_null[0],axis=1),target,random_state=42)
-train_loader=DataLoader(dataset=tuple(zip(x_train.to_numpy(),y_train.to_numpy())),batch_size=batch_size,shuffle=True)
-test_loader=DataLoader(dataset=tuple(zip(x_test.to_numpy(),y_test.to_numpy())),batch_size=batch_size,shuffle=True)
+target=pd.DataFrame(df_to_train[columns_with_null[1]])
+# df_to_train=df_to_train.iloc[:,:17]
+input_size=df_to_train.shape[1]-1
+x_train,x_test,y_train,y_test=train_test_split(df_to_train.drop(columns_with_null[1],axis=1),target,random_state=42)
+scaler=RobustScaler()
+x_train=scaler.fit_transform(x_train)
+x_test=scaler.transform(x_test)
+df=Df()
+train_loader=DataLoader(dataset=df,batch_size=batch_size,shuffle=False)
+# test_loader=DataLoader(dataset=df,batch_size=batch_size,shuffle=False)
+# train_loader=DataLoader(dataset=tuple(zip(x_train.to_numpy(),y_train.to_numpy())),batch_size=batch_size,shuffle=False)
+# test_loader=DataLoader(dataset=tuple(zip(x_test.to_numpy(),y_test.to_numpy())),batch_size=batch_size,shuffle=False)
 '''Initialize network'''
 model=Model(input_size=input_size,num_classes=num_classes).to(device)
 '''loss and optimizer'''
 criterion=nn.MSELoss()
-optimizer=torch.optim.Adam(model.parameters(),lr=learning_rate)
 
+optimizer=torch.optim.RMSprop(model.parameters(),lr=learning_rate)
+losses=[]
 '''train network'''
-for epoch in range(num_epochs):
-    for batch_idc, (data,targets) in tqdm(enumerate(train_loader)):
+for epoch in tqdm(range(num_epochs)):
+    for batch_idc, (data,targets) in enumerate(train_loader):
         # get data to cuda
         data=data.to(device=device)
         targets=targets.to(device=device)
 
 #         forward
-        scores=model(data)
-        loss=criterion(scores,targets)
+        predictions=model(data)
+        loss=torch.sqrt(criterion(predictions,targets))
 
         # backward
-        optimizer.zero_grad()
+        if epoch > 0:
+            plt.scatter(epoch, loss.item())
+            losses.append(loss.item())
+            print(f'epoch:{epoch}\t,iter: {batch_idc}\t,loss:{loss.item()} ')
         loss.backward()
-
         # gradient descent or adam step
         optimizer.step()
+        optimizer.zero_grad(set_to_none=True)
+
+xx_train=torch.tensor(x_train,dtype=torch.float32).to(device)
+xx_test=torch.tensor(x_test,dtype=torch.float32).to(device)
+with torch.no_grad():
+    x_train_pred=model(xx_train).to('cpu')
+    x_test_pred=model(xx_test).to('cpu')
+plt.show()
+
+# img_grid=torchvision.utils.make_grid(torch.tensor(losses))
+# writer.add_image('loss',img_grid)
+# writer.close()
+
 
 # check accuracy on traning & test to see hoe good our model
-def check_accuracy(loader,model):
-    num_correct=0
-    num_samples=0
-    model.eval()
-    with torch.no_grad():
-        for x,y in tqdm(loader):
-            x=x.to(device=device)
-            y=y.to(device=device)
+# def check_accuracy(loader,model):
+#     num_correct=0
+#     num_samples=0
+#     model.eval()
+#     with torch.no_grad():
+#         for x,y in tqdm(loader):
+#             x=x.to(device=device)
+#             y=y.to(device=device)
+#
+#             scores=model(x)
+#             _,predictions=scores.max(1)
+#             num_correct+=(predictions==y).sum()
+#             num_samples+=predictions.size(0)
+#
+#         print(f'got {num_correct}/{num_samples} with accuracy {float(num_correct)/float(num_samples)*100:.2f}')
+#
+#     model.train()
 
-            scores=model(x)
-            _,predictions=scores.max(1)
-            num_correct+=(predictions==y).sum()
-            num_samples+=predictions.size(0)
-
-        print(f'got {num_correct}/{num_samples} with accuracy {float(num_correct)/float(num_samples)*100:.2f}')
-
-    model.train()
-    return acc
-check_accuracy(train_loader,model)
-check_accuracy(test_loader,model)
+# check_accuracy(train_loader,model)
+# check_accuracy(test_loader,model)
 
 #
 #
