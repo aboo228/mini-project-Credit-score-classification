@@ -53,16 +53,14 @@ for column in tqdm(range(len(roll_columns))):
         if 0 < instance % 8 < 7:
             fill = np.max((train_df.loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == id]).loc[
                               [instance - 1, instance + 1]].astype('int32'))
-            if len(str(fill)) <= 3:
+            if len(str(fill)) <= 2:
                 train_df.loc[instance, roll_columns[column]] = fill
             else:
                 train_df.loc[instance, roll_columns[column]] = (
-                    train_df.loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == id]).drop(
-                    instance).value_counts().idxmax()
+                    train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == id]).value_counts().idxmax()
         else:
             train_df.loc[instance, roll_columns[column]] = (
-                train_df.loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == id]).drop(
-                instance).value_counts().idxmax()
+                train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == id]).value_counts().idxmax()
 
 train_df.loc[:, 'Age'] = train_df.loc[:, 'Age'].astype('int32')
 
