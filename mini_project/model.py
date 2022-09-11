@@ -1,8 +1,8 @@
 import pandas as pd
-import numpy as np
-import seaborn as sns
+# import numpy as np
+# import seaborn as sns
 from tqdm import trange, tqdm
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
@@ -24,11 +24,23 @@ from keras.layers import Dense
 
 
 train_path = r'train_df.csv'
-#todo train_df without get_dummies columns
-#todo Credit_Score - get_dummies good no good
+
 train_df = pd.read_csv(train_path)
 train_df = train_df.dropna()
 
+#todo train_df without get_dummies columns
+# train_df['Credit_Score']= pd.get_dummies(train_df['Credit_Score'])['Good']
+
+for i in tqdm(train_df.index):
+    if train_df['Credit_Score'].loc[i][0] == 'Standard':
+        train_df['Credit_Score'][i] = 0
+    elif train_df['Credit_Score'].loc[i] == 'Good':
+        train_df['Credit_Score'][i] = 1
+    else:
+        train_df['Credit_Score'][i] = 2
+
+train_df['Credit_Score'] = train_df['Credit_Score'].astype('float32')
+#todo Credit_Score - get_dummies good no good
 
 X = train_df.drop(['Credit_Score'], axis=1)
 y = train_df['Credit_Score']
@@ -68,17 +80,18 @@ X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, shuffle=T
 # clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
 # clf.fit(X, y)
 
-# #todo NN wite keras
+# #todo NN wite keras -- first step: convert target to int
 #
 # define the keras model
 model = Sequential()
 model.add(Dense(12, input_shape=(56,), activation='relu'))
 model.add(Dense(8, activation='relu'))
-model.add(Dense(1, activation='sigmoid'))
+model.add(Dense(11, activation='relu'))
+model.add(Dense(1, activation='softmax'))
 # compile the keras model
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 # fit the keras model on the dataset
-model.fit(X_train, y_train, epochs=20, batch_size=10)
+history = model.fit(X_train, y_train, epochs=5, batch_size=10)
 # evaluate the keras model
 _, accuracy = model.evaluate(X_train, y_train)
 print('Accuracy: %.2f' % (accuracy*100))
