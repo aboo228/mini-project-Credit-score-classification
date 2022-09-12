@@ -1,5 +1,5 @@
 import pandas as pd
-# import numpy as np
+import numpy as np
 # import seaborn as sns
 from tqdm import trange, tqdm
 # import matplotlib.pyplot as plt
@@ -82,15 +82,17 @@ X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.25, random_s
 #
 # define the keras model
 model = Sequential()
-model.add(Dense(320, activation='relu', input_dim=57))
-model.add(Dropout(0.3))
-model.add(Dense(320 ,activation='relu'))
-model.add(Dropout(0.3))
+model.add(Dense(320, activation='leaky_relu', input_dim=57))
+model.add(Dropout(0.5))
+model.add(Dense(320 ,activation='leaky_relu'))
+model.add(Dropout(0.5))
+model.add(Dense(150, activation='sigmoid'))
 model.add(Dense(3, activation='softmax'))
+
 # model.add(Dense(1, activation='softmax'))
 # compile the keras model
 # tf.keras.optimizers.Adagrad
-model.compile(loss='categorical_crossentropy', optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer=tf.keras.optimizers.Adam(learning_rate=0.003), metrics=['accuracy'])
 # fit the keras model on the dataset
 history = model.fit(X_train, y_train, epochs=20, batch_size=1000)
 # evaluate the keras model
