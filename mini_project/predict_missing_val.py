@@ -4,6 +4,7 @@ from tqdm import tqdm
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression, SGDRegressor,LogisticRegression
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
@@ -15,8 +16,9 @@ from torch.utils.data import DataLoader,Dataset
 from tqdm import trange, tqdm
 from torch.utils.tensorboard import SummaryWriter
 import torchvision
+import optuna
 
-writer=SummaryWriter('runs/pre_pred_val')
+
 
 
 
@@ -27,9 +29,10 @@ train_df = pd.read_csv('train_df.csv')
 '''convert target values to numbers: poor:0 ,standard:1, good:2'''
 # Payment_of_Min_Amount_get_dummies = pd.get_dummies(df['Payment_of_Min_Amount'], drop_first=True)
 # df = pd.concat([df, Payment_of_Min_Amount_get_dummies], axis=1)
+
 convert_dict={'Poor':0,'Standard':1,'Good':2}
 for (label,num) in convert_dict.items():
-    train_df.loc[train_df.index[train_df.loc[:,'Credit_Score']==label],'Credit_Score']=float(num)
+    train_df.loc[train_df.index[train_df.loc[:,'Credit_Score']==label],'Credit_Score']=num
 
 # df = df.astype('float64')
 #
@@ -55,22 +58,26 @@ describe = df_to_train.describe()
 class Model(nn.Module):
     def __init__(self,input_size,num_classes):
         super(Model,self).__init__()
-        self.fc1=nn.Linear(input_size,1700)
-        self.fc2=nn.Dropout(0.5)
-        self.fc3=nn.Linear(1700,input_size)
-        self.fc4=nn.Linear(input_size,num_classes)
+        self.fc1=nn.Linear(input_size,24)
+        # self.fc2=nn.Dropout(0.4)
+        # self.fc3=nn.Linear(input_size*3,int(input_size*1.5))
+        # self.fc4 = nn.Dropout(0.4)
+        # self.fc4=nn.Linear(980,input_size)
+        self.fc5=nn.Linear(24,num_classes)
 
     def forward(self,x):
-        x=nn.functional.leaky_relu(self.fc1(x))
-        x=self.fc2(x)
-        x=self.fc3(x)
-        x=self.fc4(x)
+        x=self.fc1(x)
+        # x=self.fc2(x)
+        nn.functional.leaky_relu(x,inplace=True)
+        # x=self.fc4(x)
+        x=self.fc5(x)
+        # x=torch.softmax(x,dim=1)
         return x
 
 class Df(Dataset):
     def __init__(self):
         self.x=torch.tensor(x_train,dtype=torch.float32)
-        self.y=torch.tensor(y_train.to_numpy(),dtype=torch.float32)
+        self.y=torch.tensor(y_train.astype(np.int32),dtype=torch.int32).view(-1)
         self.instances=self.x.shape[0]
 
     def __getitem__(self, index):
@@ -78,25 +85,30 @@ class Df(Dataset):
 
     def __len__(self):
         return self.instances
-    df_to_train=df_to_train.astype(np.float32)
+
+df_to_train.iloc[:,:-1]=df_to_train.iloc[:,:-1].astype(np.float32)
 
 
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using {device} device")
 '''Hyperparameters'''
-num_classes=1
+num_classes=3
 learning_rate=0.0001
-batch_size=100
-num_epochs=20
+batch_size=62**2
+num_epochs=300
+
 '''load data'''
-target=pd.DataFrame(df_to_train[columns_with_null[1]])
+target=pd.DataFrame(df_to_train['Credit_Score']).to_numpy()
 # df_to_train=df_to_train.iloc[:,:17]
 input_size=df_to_train.shape[1]-1
-x_train,x_test,y_train,y_test=train_test_split(df_to_train.drop(columns_with_null[1],axis=1),target,random_state=42)
-scaler=RobustScaler()
+# Y=pd.get_dummies(df_to_train['Credit_Score']).to_numpy()
+x_train,x_test,y_train,y_test=train_test_split(df_to_train.drop('Credit_Score',axis=1),target,random_state=42)
+
+scaler=StandardScaler()
 x_train=scaler.fit_transform(x_train)
 x_test=scaler.transform(x_test)
 df=Df()
+
 train_loader=DataLoader(dataset=df,batch_size=batch_size,shuffle=False)
 # test_loader=DataLoader(dataset=df,batch_size=batch_size,shuffle=False)
 # train_loader=DataLoader(dataset=tuple(zip(x_train.to_numpy(),y_train.to_numpy())),batch_size=batch_size,shuffle=False)
@@ -104,23 +116,23 @@ train_loader=DataLoader(dataset=df,batch_size=batch_size,shuffle=False)
 '''Initialize network'''
 model=Model(input_size=input_size,num_classes=num_classes).to(device)
 '''loss and optimizer'''
-criterion=nn.MSELoss()
+criterion=nn.CrossEntropyLoss()
 
-optimizer=torch.optim.RMSprop(model.parameters(),lr=learning_rate)
+optimizer=torch.optim.Adam(model.parameters())
 losses=[]
 '''train network'''
 for epoch in tqdm(range(num_epochs)):
     for batch_idc, (data,targets) in enumerate(train_loader):
         # get data to cuda
         data=data.to(device=device)
-        targets=targets.to(device=device)
+        targets=targets.type(torch.LongTensor).to(device=device)
 
 #         forward
         predictions=model(data)
-        loss=torch.sqrt(criterion(predictions,targets))
+        loss=criterion(predictions,targets)
 
         # backward
-        if epoch > 0:
+        if epoch>0:
             plt.scatter(epoch, loss.item())
             losses.append(loss.item())
             print(f'epoch:{epoch}\t,iter: {batch_idc}\t,loss:{loss.item()} ')
@@ -136,6 +148,9 @@ with torch.no_grad():
     x_test_pred=model(xx_test).to('cpu')
 plt.show()
 
+acc_train=(torch.max(x_train_pred,1)[1].numpy().reshape(-1,1)==y_train).sum()/y_train.shape[0]
+acc_test=(torch.max(x_test_pred,1)[1].numpy().reshape(-1,1)==y_test).sum()/y_test.shape[0]
+print(f'train accuracy:{acc_train}\ntest accuracy:{acc_test}')
 # img_grid=torchvision.utils.make_grid(torch.tensor(losses))
 # writer.add_image('loss',img_grid)
 # writer.close()
