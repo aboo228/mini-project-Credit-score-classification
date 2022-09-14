@@ -189,9 +189,9 @@ train_df.iloc[:, 17:35] = train_df.iloc[:, 17:35].astype('int32')
 '''predict missing values'''
 
 
-instances_with_null = train_df.index[train_df.isnull().sum(axis=1) > 0]
-columns_with_null = train_df.columns[train_df.isnull().sum() > 0]
-instances_to_predict = train_df.iloc[instances_with_null, :]
+# instances_with_null = train_df.index[train_df.isnull().sum(axis=1) > 0]
+# columns_with_null = train_df.columns[train_df.isnull().sum() > 0]
+# instances_to_predict = train_df.iloc[instances_with_null, :]
 train_df=pd.concat([train_df, train_targets],axis=1)
 
 # filling more missing data
