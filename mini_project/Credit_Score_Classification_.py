@@ -9,10 +9,10 @@ import os
 
 train_path = r'train.csv'
 test_path = r'test.csv'
-train_df = pd.read_csv(train_path,low_memory=False)
+train_df = pd.read_csv(train_path, low_memory=False)
 test_df = pd.read_csv(test_path)
-train_targets=train_df.iloc[:,-1]
-train_df=train_df.iloc[:,:-1]
+train_targets = train_df.iloc[:, -1]
+train_df = train_df.iloc[:, :-1]
 train_df.info()
 train_df.isna().sum()
 # numeric columns dtype is object, so we need to convert it to integer type
@@ -36,8 +36,8 @@ train_df.loc[:, numeric_mixedtype_columns[0]] = train_df.loc[:, numeric_mixedtyp
 
 '''check valid ages'''
 '''min 14 check and its valid'''
-print(train_df[train_df.loc[:, 'Age'] == 95])
-invalid_age_instances = train_df.index[train_df.loc[:, 'Age'] >= 95].to_list()
+
+invalid_age_instances = train_df.index[train_df.loc[:, 'Age'] >= 111].to_list()
 invalid_age_cust_id = train_df.loc[invalid_age_instances, 'Customer_ID'].to_list()
 invalid_delayed_pay_ins = train_df.index[train_df.loc[:, 'Num_of_Delayed_Payment'].isnull()].to_list()
 invalid_delayed_pay_cust_id = train_df.loc[invalid_delayed_pay_ins, 'Customer_ID'].to_list()
@@ -57,10 +57,12 @@ for column in tqdm(range(len(roll_columns))):
                 train_df.loc[instance, roll_columns[column]] = fill
             else:
                 train_df.loc[instance, roll_columns[column]] = (
-                    train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == i]).value_counts().idxmax()
+                    train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]]
+                    [train_df.loc[:, 'Customer_ID'] == i]).value_counts().idxmax()
         else:
             train_df.loc[instance, roll_columns[column]] = (
-                train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == i]).value_counts().idxmax()
+                train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]]
+                [train_df.loc[:, 'Customer_ID'] == i]).value_counts().idxmax()
 
 train_df.loc[:, 'Age'] = train_df.loc[:, 'Age'].astype('int32')
 
@@ -108,7 +110,6 @@ for column in tqdm(range(len(columns_to))):
         else:
             start_check_index = unknown_val_index - 8
 
-
         train_df.loc[unknown_val_index, columns_to[column]] = (
             train_df.loc[start_check_index:unknown_val_index + 8, columns_to[column]][
                 train_df.loc[start_check_index:unknown_val_index + 8, 'Customer_ID'] == customer_id]).drop(
@@ -121,16 +122,18 @@ _ = train_df.loc[instance_to_convert, 'Credit_History_Age'].str.split(' ')
 train_df.loc[instance_to_convert, 'Credit_History_Age'] = (_.str.get(0)).astype('int32') * 12 + (_.str.get(3)).astype(
     'int32')
 #
+
 '''fill mising values in credit age feature'''
-inst_nan_credithist=train_df.index[train_df.Credit_History_Age.isnull()]
-credit_age_values=train_df.loc[:,['Credit_History_Age','Customer_ID']].drop(inst_nan_credithist,axis=0)
-customerid=None
-index_min_age=None
+inst_nan_credithist = train_df.index[train_df.Credit_History_Age.isnull()]
+credit_age_values = train_df.loc[:, ['Credit_History_Age', 'Customer_ID']].drop(inst_nan_credithist, axis=0)
+customerid = None
+index_min_age = None
 # todo: improve o()
 for i in tqdm(inst_nan_credithist):
-    customerid=train_df.loc[i, 'Customer_ID']
-    index_min_age = credit_age_values[credit_age_values.Customer_ID==customerid].sort_values('Credit_History_Age').index[0]
-    train_df.loc[i, 'Credit_History_Age']= (i-index_min_age)+credit_age_values.loc[index_min_age,'Credit_History_Age']
+    customerid = train_df.loc[i, 'Customer_ID']
+    index_min_age = credit_age_values[credit_age_values.Customer_ID
+                                      == customerid].sort_values('Credit_History_Age').index[0]
+    train_df.loc[i, 'Credit_History_Age'] = (i-index_min_age)+credit_age_values.loc[index_min_age, 'Credit_History_Age']
 
 '''extricate loans types to convert loans types to columns '''
 unique_loans_types = []
