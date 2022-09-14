@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import seaborn as sns
-from sqlalchemy.orm.loading import instances
 from tqdm import trange, tqdm
 import matplotlib.pyplot as plt
 import os
@@ -9,10 +8,10 @@ import os
 
 train_path = r'train.csv'
 test_path = r'test.csv'
-train_df = pd.read_csv(train_path, low_memory=False)
+train_df = pd.read_csv(train_path,low_memory=False)
 test_df = pd.read_csv(test_path)
-train_targets = train_df.iloc[:, -1]
-train_df = train_df.iloc[:, :-1]
+train_targets=train_df.iloc[:,-1]
+train_df=train_df.iloc[:,:-1]
 train_df.info()
 train_df.isna().sum()
 # numeric columns dtype is object, so we need to convert it to integer type
@@ -36,33 +35,31 @@ train_df.loc[:, numeric_mixedtype_columns[0]] = train_df.loc[:, numeric_mixedtyp
 
 '''check valid ages'''
 '''min 14 check and its valid'''
-
-invalid_age_instances = train_df.index[train_df.loc[:, 'Age'] >= 111].to_list()
-invalid_age_cust_id = train_df.loc[invalid_age_instances, 'Customer_ID'].to_list()
+print(train_df[train_df.loc[:, 'Age'] == 95])
+invalid_age_instances = train_df.index[train_df.loc[:, 'Age'] >= 95].to_list()
+invalid_age_custid = train_df.loc[invalid_age_instances, 'Customer_ID'].to_list()
 invalid_delayed_pay_ins = train_df.index[train_df.loc[:, 'Num_of_Delayed_Payment'].isnull()].to_list()
-invalid_delayed_pay_cust_id = train_df.loc[invalid_delayed_pay_ins, 'Customer_ID'].to_list()
+invalid_delayed_pay_custid = train_df.loc[invalid_delayed_pay_ins, 'Customer_ID'].to_list()
 train_df.loc[:, 'Num_of_Delayed_Payment'].fillna('-1000', inplace=True)
 
 invalid_values_instances = invalid_age_instances, invalid_delayed_pay_ins
-invalid_index_by_cust_id = invalid_age_cust_id, invalid_delayed_pay_cust_id
+invalid_index_by_custid = invalid_age_custid, invalid_delayed_pay_custid
 #
 roll_columns = ['Age', 'Num_of_Delayed_Payment']
 for column in tqdm(range(len(roll_columns))):
-    for instance, i in zip(invalid_values_instances[column], invalid_index_by_cust_id[column]):
+    for instance, id in zip(invalid_values_instances[column], invalid_index_by_custid[column]):
         fill = None
         if 0 < instance % 8 < 7:
-            fill = np.max((train_df.loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == i]).loc[
+            fill = np.max((train_df.loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == id]).loc[
                               [instance - 1, instance + 1]].astype('int32'))
             if len(str(fill)) <= 2:
                 train_df.loc[instance, roll_columns[column]] = fill
             else:
                 train_df.loc[instance, roll_columns[column]] = (
-                    train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]]
-                    [train_df.loc[:, 'Customer_ID'] == i]).value_counts().idxmax()
+                    train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == id]).value_counts().idxmax()
         else:
             train_df.loc[instance, roll_columns[column]] = (
-                train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]]
-                [train_df.loc[:, 'Customer_ID'] == i]).value_counts().idxmax()
+                train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == id]).value_counts().idxmax()
 
 train_df.loc[:, 'Age'] = train_df.loc[:, 'Age'].astype('int32')
 
@@ -110,6 +107,7 @@ for column in tqdm(range(len(columns_to))):
         else:
             start_check_index = unknown_val_index - 8
 
+
         train_df.loc[unknown_val_index, columns_to[column]] = (
             train_df.loc[start_check_index:unknown_val_index + 8, columns_to[column]][
                 train_df.loc[start_check_index:unknown_val_index + 8, 'Customer_ID'] == customer_id]).drop(
@@ -122,18 +120,16 @@ _ = train_df.loc[instance_to_convert, 'Credit_History_Age'].str.split(' ')
 train_df.loc[instance_to_convert, 'Credit_History_Age'] = (_.str.get(0)).astype('int32') * 12 + (_.str.get(3)).astype(
     'int32')
 #
-
 '''fill mising values in credit age feature'''
-inst_nan_credithist = train_df.index[train_df.Credit_History_Age.isnull()]
-credit_age_values = train_df.loc[:, ['Credit_History_Age', 'Customer_ID']].drop(inst_nan_credithist, axis=0)
-customerid = None
-index_min_age = None
+inst_nan_credithist=train_df.index[train_df.Credit_History_Age.isnull()]
+credit_age_values=train_df.loc[:,['Credit_History_Age','Customer_ID']].drop(inst_nan_credithist,axis=0)
+customerid=None
+index_min_age=None
 # todo: improve o()
 for i in tqdm(inst_nan_credithist):
-    customerid = train_df.loc[i, 'Customer_ID']
-    index_min_age = credit_age_values[credit_age_values.Customer_ID
-                                      == customerid].sort_values('Credit_History_Age').index[0]
-    train_df.loc[i, 'Credit_History_Age'] = (i-index_min_age)+credit_age_values.loc[index_min_age, 'Credit_History_Age']
+    customerid=train_df.loc[i, 'Customer_ID']
+    index_min_age = credit_age_values[credit_age_values.Customer_ID==customerid].sort_values('Credit_History_Age').index[0]
+    train_df.loc[i, 'Credit_History_Age']= (i-index_min_age)+credit_age_values.loc[index_min_age,'Credit_History_Age']
 
 '''extricate loans types to convert loans types to columns '''
 unique_loans_types = []
@@ -148,31 +144,28 @@ for i in tqdm(range(9)):
     col = train_df.loc[:, 'Type_of_Loan'].str.split(',').str.get(i).str.strip().unique().tolist()
     get_dummies.loc[:, col] = get_dummies.loc[:, col] + pd.get_dummies(
         train_df.loc[:, 'Type_of_Loan'].str.split(',').str.get(i).str.strip())
-
+train_df.drop('Type_of_Loan', inplace=True, axis=1)
 train_df.rename(columns={'Credit_History_Age': 'Credit_Months_History_Age'})
 train_df = pd.concat([train_df, get_dummies], axis=1)
 
-
+train_df.drop(train_df.iloc[:, 26], axis=1, inplace=True)
 train_df.iloc[:, :] = train_df.iloc[:, :].replace('nan', None)
 train_df.iloc[:, :] = train_df.iloc[:, :].replace('None', None)
 columns_with_null = train_df.columns[train_df.isnull().sum() > 0]
-# for more accuracy need to be check each customer std, we will omit that and just fil\
-# missing data with the mean of the customer
+'''for more accuracy need to be check each customer std, 
+    we will omit that and just fill missing data with the mean of the customer'''
 for column in tqdm(columns_with_null[:-1]):
-    insta = train_df.index[train_df[column].isnull()]
-    customer_na_id = train_df.loc[insta, 'Customer_ID'].to_list()
-    for indicator, i in zip(insta, customer_na_id):
-        _ = train_df.loc[:, column][train_df.loc[:, 'Customer_ID'] == i]
-        if column == 'Num_of_Delayed_Payment':
-            train_df.loc[indicator, column] = int(np.round(_.astype(np.float32).mean()))
+    insta=train_df.index[train_df[column].isnull()]
+    customer_na_id=train_df.loc[insta,'Customer_ID'].to_list()
+    for indicator,id in zip(insta,customer_na_id):
+        _=train_df.loc[:,column][train_df.loc[:,'Customer_ID']==id]
+        if column=='Num_of_Delayed_Payment':
+            train_df.loc[indicator, column]=int(np.round(_.astype(np.float32).mean()))
         else:
-            train_df.loc[indicator, column] = np.round(_.astype(np.float32).mean(), 2)
+            train_df.loc[indicator, column]=np.round(_.astype(np.float32).mean(),2)
 
 
 '''drop not important columns' we can do feature engineering on name column by classification by sex '''
-train_df.drop('Type_of_Loan', inplace=True, axis=1)
-# drop null columns, without column name
-train_df.drop(train_df.iloc[:, 26], axis=1, inplace=True)
 train_df.drop(['ID', 'Name', 'SSN'], axis=1, inplace=True)
 train_df.drop(['Customer_ID', 'Month', 'Payment_Behaviour'], axis=1, inplace=True)
 
@@ -182,17 +175,16 @@ dumdum = pd.get_dummies(train_df.loc[:, get_dum_col])
 train_df = pd.concat([train_df, dumdum], axis=1)
 train_df.drop(train_df.loc[:, get_dum_col], axis=1, inplace=True)
 
-print('hi')
 
-# # todo: improve dtype convert
-#
-train_df['Amount_invested_monthly'] = train_df['Amount_invested_monthly'].astype('str').replace('10000', None)
-train_df['Amount_invested_monthly'] = train_df['Amount_invested_monthly'].replace('None', None)
-#  train_df.iloc[:, 0:16]- is numeric columns
-train_df.iloc[:, 0:16] = train_df.iloc[:, 0:16].astype('float32')
-train_df.iloc[train_df.index[train_df['Monthly_Balance'] .astype('float32') > 5000000000], 16] = None
+
+# todo: improve dtype convert
+
+train_df.iloc[:, 15] = train_df.iloc[:, 15].astype('str').replace('10000', None)
+train_df.iloc[:, 15] = train_df.iloc[:, 15].replace('None', None)
+train_df.iloc[:, 15] = train_df.iloc[:, 15].astype('float32')
+train_df.iloc[:, 16] = train_df.iloc[:, 16].astype('float32')
+train_df.iloc[train_df.index[train_df.iloc[:, 16].astype('float32') > 5000000000], 16] = None
 train_df.iloc[:, :] = train_df.iloc[:, :].replace('nan', None)
-#  train_df.iloc[:, 17:35]- is get_dummies columns
 train_df.iloc[:, 17:35] = train_df.iloc[:, 17:35].astype('int32')
 '''predict missing values'''
 
@@ -200,7 +192,7 @@ train_df.iloc[:, 17:35] = train_df.iloc[:, 17:35].astype('int32')
 instances_with_null = train_df.index[train_df.isnull().sum(axis=1) > 0]
 columns_with_null = train_df.columns[train_df.isnull().sum() > 0]
 instances_to_predict = train_df.iloc[instances_with_null, :]
-train_df = pd.concat([train_df, train_targets], axis=1)
+train_df=pd.concat([train_df, train_targets],axis=1)
 
 # filling more missing data
 # for column in columns_with_null[:-1]:
@@ -208,7 +200,3 @@ train_df = pd.concat([train_df, train_targets], axis=1)
 #     customer_na_id=train_df['Customer_Id'].
 # export as csv_file
 train_df.to_csv('train_df.csv', index=False)
-
-
-# train_df.describe()
-# train_df.info()
