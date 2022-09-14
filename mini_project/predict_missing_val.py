@@ -58,17 +58,17 @@ describe = df_to_train.describe()
 class Model(nn.Module):
     def __init__(self,input_size,num_classes):
         super(Model,self).__init__()
-        self.fc1=nn.Linear(input_size,24)
-        # self.fc2=nn.Dropout(0.4)
-        # self.fc3=nn.Linear(input_size*3,int(input_size*1.5))
+        self.fc1=nn.Linear(input_size,6)
+        # self.fc2=nn.Dropout(0.3)
+        self.fc3=nn.Linear(6,113)
         # self.fc4 = nn.Dropout(0.4)
         # self.fc4=nn.Linear(980,input_size)
-        self.fc5=nn.Linear(24,num_classes)
+        self.fc5=nn.Linear(113,num_classes)
 
     def forward(self,x):
         x=self.fc1(x)
-        # x=self.fc2(x)
-        nn.functional.leaky_relu(x,inplace=True)
+        # nn.functional.leaky_relu(x,inplace=True)
+        x=self.fc3(x)
         # x=self.fc4(x)
         x=self.fc5(x)
         # x=torch.softmax(x,dim=1)
@@ -93,16 +93,16 @@ device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using {device} device")
 '''Hyperparameters'''
 num_classes=3
-learning_rate=0.0001
-batch_size=62**2
-num_epochs=300
+learning_rate=0.00006
+batch_size=32*27
+num_epochs=100
 
 '''load data'''
 target=pd.DataFrame(df_to_train['Credit_Score']).to_numpy()
 # df_to_train=df_to_train.iloc[:,:17]
 input_size=df_to_train.shape[1]-1
 # Y=pd.get_dummies(df_to_train['Credit_Score']).to_numpy()
-x_train,x_test,y_train,y_test=train_test_split(df_to_train.drop('Credit_Score',axis=1),target,random_state=42)
+x_train,x_test,y_train,y_test=train_test_split(df_to_train.drop('Credit_Score',axis=1),target,random_state=42,stratify=target)
 
 scaler=StandardScaler()
 x_train=scaler.fit_transform(x_train)
@@ -111,14 +111,14 @@ df=Df()
 
 train_loader=DataLoader(dataset=df,batch_size=batch_size,shuffle=False)
 # test_loader=DataLoader(dataset=df,batch_size=batch_size,shuffle=False)
-# train_loader=DataLoader(dataset=tuple(zip(x_train.to_numpy(),y_train.to_numpy())),batch_size=batch_size,shuffle=False)
+# train_loader=DataLoader(dataset=tuple(zip(x_train,y_train)),batch_size=batch_size,shuffle=False)
 # test_loader=DataLoader(dataset=tuple(zip(x_test.to_numpy(),y_test.to_numpy())),batch_size=batch_size,shuffle=False)
 '''Initialize network'''
 model=Model(input_size=input_size,num_classes=num_classes).to(device)
 '''loss and optimizer'''
 criterion=nn.CrossEntropyLoss()
 
-optimizer=torch.optim.Adam(model.parameters())
+optimizer=torch.optim.Adam(model.parameters(),lr=learning_rate)
 losses=[]
 '''train network'''
 for epoch in tqdm(range(num_epochs)):
@@ -151,6 +151,8 @@ plt.show()
 acc_train=(torch.max(x_train_pred,1)[1].numpy().reshape(-1,1)==y_train).sum()/y_train.shape[0]
 acc_test=(torch.max(x_test_pred,1)[1].numpy().reshape(-1,1)==y_test).sum()/y_test.shape[0]
 print(f'train accuracy:{acc_train}\ntest accuracy:{acc_test}')
+
+
 # img_grid=torchvision.utils.make_grid(torch.tensor(losses))
 # writer.add_image('loss',img_grid)
 # writer.close()
@@ -239,5 +241,4 @@ print(f'train accuracy:{acc_train}\ntest accuracy:{acc_test}')
 #     nn_model.zero_grad()
 #     loss.backward()
 #     optimizer.step()
-#
-#
+

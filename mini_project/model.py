@@ -47,7 +47,7 @@ y=pd.get_dummies(y)
 # pca.fit(X)
 # X = pca.fit_transform(X)
 
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.25, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.25, random_state=42,stratify=y)
 
 '''check random forest model'''
 # random_forest = RandomForestClassifier(random_state=42, n_estimators=50)
