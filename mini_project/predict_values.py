@@ -4,24 +4,31 @@ from tqdm import tqdm
 import sklearn.tree
 from sklearn.model_selection import train_test_split,learning_curve,cross_val_score
 from sklearn.linear_model import LinearRegression, SGDRegressor,Ridge,ElasticNet
-from sklearn.ensemble import RandomForestRegressor,GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor,GradientBoostingRegressor, AdaBoostRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler,RobustScaler
 from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 import seaborn as sns
 import matplotlib.pyplot as plt
-
-
 import optuna
+
+# def objective(trial):
+
+
 train=pd.read_csv("train_df.csv")
 convert_dict={'Poor':0,'Standard':1,'Good':2}
 for (label,num) in convert_dict.items():
     train.loc[train.index[train.loc[:,'Credit_Score']==label],'Credit_Score']=num
 
+annual_income_loutliers=train.index[train.loc[:,'Annual_Income']>170000]
+
+
+train=train.drop(annual_income_loutliers,axis=0)
+
 instances_with_null = train.index[train.isnull().sum(axis=1) > 0]
 columns_with_null = train.columns[train.isnull().sum() > 0]
-instances_to_predict = train.iloc[instances_with_null, :]
+instances_to_predict = train.loc[instances_with_null, :]
 # train=pd.concat([train, train],axis=1)
 train=train.drop(instances_with_null,axis=0)
 # train=train.iloc[:,:17]
@@ -54,12 +61,13 @@ train_pred=None
 
 for column in tqdm(columns_with_null):
     train_na=train.drop(column,axis=1)
-    x_train,x_test,y_train,y_test= train_test_split(train.drop(column,axis=1),train.loc[:,column],test_size=0.25,random_state=11)
-    # model=RandomForestRegressor(n_estimators=10)
-    model=GradientBoostingRegressor(learning_rate=0.1,n_estimators=70)
+    x_train,x_test,y_train,y_test= train_test_split(train.drop(column,axis=1),train.loc[:,column],test_size=0.25,random_state=42)
+    model=RandomForestRegressor(n_estimators=35)
+    # model=GradientBoostingRegressor(learning_rate=0.1,n_estimators=70)
     # model=LinearRegression()
     # model=ElasticNet(max_iter=1000)
     # model=SVR()
+    # model=AdaBoostRegressor(n_estimators=320)
     # if True:
     #     x_train = x_train.astype(np.float32)
     #     x_train[x_train > 0] = np.log(x_train[x_train > 0])

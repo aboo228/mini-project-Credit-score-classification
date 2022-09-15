@@ -103,7 +103,6 @@ for column in tqdm(range(len(columns_to))):
         start_check_index = 0
         if unknown_val_index < 8:
             start_check_index = 0
-
         else:
             start_check_index = unknown_val_index - 8
 
@@ -130,6 +129,7 @@ for i in tqdm(inst_nan_credithist):
     customerid=train_df.loc[i, 'Customer_ID']
     index_min_age = credit_age_values[credit_age_values.Customer_ID==customerid].sort_values('Credit_History_Age').index[0]
     train_df.loc[i, 'Credit_History_Age']= (i-index_min_age)+credit_age_values.loc[index_min_age,'Credit_History_Age']
+
 
 '''extricate loans types to convert loans types to columns '''
 unique_loans_types = []
@@ -167,7 +167,7 @@ for column in tqdm(columns_with_null[:-1]):
 
 '''drop not important columns' we can do feature engineering on name column by classification by sex '''
 train_df.drop(['ID', 'Name', 'SSN'], axis=1, inplace=True)
-train_df.drop(['Customer_ID', 'Month', 'Payment_Behaviour'], axis=1, inplace=True)
+train_df.drop([ 'Month', 'Payment_Behaviour'], axis=1, inplace=True)
 
 
 get_dum_col = ['Occupation', 'Credit_Mix', 'Payment_of_Min_Amount']
@@ -179,13 +179,14 @@ train_df.drop(train_df.loc[:, get_dum_col], axis=1, inplace=True)
 
 # todo: improve dtype convert
 
-train_df.iloc[:, 15] = train_df.iloc[:, 15].astype('str').replace('10000', None)
-train_df.iloc[:, 15] = train_df.iloc[:, 15].replace('None', None)
-train_df.iloc[:, 15] = train_df.iloc[:, 15].astype('float32')
+train_df.iloc[:, 16] = train_df.iloc[:, 16].astype('str').replace('10000', None)
+train_df.iloc[:, 16] = train_df.iloc[:, 16].replace('None', None)
 train_df.iloc[:, 16] = train_df.iloc[:, 16].astype('float32')
-train_df.iloc[train_df.index[train_df.iloc[:, 16].astype('float32') > 5000000000], 16] = None
+train_df.iloc[:, 17] = train_df.iloc[:, 17].astype('float32')
+train_df.iloc[train_df.index[train_df.iloc[:, 17].astype('float32') > 5000000000], 17] = None
 train_df.iloc[:, :] = train_df.iloc[:, :].replace('nan', None)
-train_df.iloc[:, 17:35] = train_df.iloc[:, 17:35].astype('int32')
+train_df.iloc[:, 18:36] = train_df.iloc[:, 18:36].astype('int32')
+train_df.iloc[:, 2]= train_df.iloc[:, 2].astype('float32')
 '''predict missing values'''
 
 
@@ -200,3 +201,16 @@ train_df=pd.concat([train_df, train_targets],axis=1)
 #     customer_na_id=train_df['Customer_Id'].
 # export as csv_file
 train_df.to_csv('train_df.csv', index=False)
+
+
+# todo:check the missin values
+'''check missing values in amount invested monthly column'''
+# custidinvestnull=train_df.loc[:,'Customer_ID'][train_df[columns_with_null[2]].isna()].unique()
+# investcustomerwithnull=train_df[train_df.loc[:,'Customer_ID'].isin(custidinvestnull)]
+
+'''total emi per month invalid values, easy we can see that for example '''
+sns.boxplot(train_df.loc[:,'Annual_Income'])
+
+
+sns.histplot(train_df.loc[:,'Annual_Income'],log_scale=True)
+
