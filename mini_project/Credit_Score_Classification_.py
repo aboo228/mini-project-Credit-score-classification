@@ -5,15 +5,16 @@ from tqdm import trange, tqdm
 import matplotlib.pyplot as plt
 import os
 
-
 train_path = r'train.csv'
 test_path = r'test.csv'
-train_df = pd.read_csv(train_path,low_memory=False)
+train_df = pd.read_csv(train_path, low_memory=False)
 test_df = pd.read_csv(test_path)
-train_targets=train_df.iloc[:,-1]
-train_df=train_df.iloc[:,:-1]
+train_targets = train_df.iloc[:, -1]
+train_df = train_df.iloc[:, :-1]
 train_df.info()
 train_df.isna().sum()
+# to see the null ratio for all instanses
+print(train_df.isna().mean())
 # numeric columns dtype is object, so we need to convert it to integer type
 numeric_mixedtype_columns = ['Age', 'Annual_Income', 'Num_of_Loan', 'Num_of_Delayed_Payment', 'Changed_Credit_Limit',
                              'Outstanding_Debt', 'Amount_invested_monthly', 'Monthly_Balance']
@@ -24,12 +25,10 @@ numeric_mixedtype_columns = ['Age', 'Annual_Income', 'Num_of_Loan', 'Num_of_Dela
 for i in tqdm(range(len(numeric_mixedtype_columns))):
     train_df.loc[:, numeric_mixedtype_columns[i]] = train_df.loc[:, numeric_mixedtype_columns[i]].astype('str')
     train_df.loc[:, numeric_mixedtype_columns[i]] = (
-            train_df.loc[:, numeric_mixedtype_columns[i]].str.replace('_', '')).str.replace('-', '')
+        train_df.loc[:, numeric_mixedtype_columns[i]].str.replace('_', '')).str.replace('-', '')
     train_df.loc[:, numeric_mixedtype_columns[i]] = train_df.loc[:, numeric_mixedtype_columns[i]].replace('', None)
 
-
 train_df.loc[:, numeric_mixedtype_columns[0]] = train_df.loc[:, numeric_mixedtype_columns[0]].astype('int32')
-
 
 # train_df.loc[:, numeric_mixedtype_columns[0]].describe()
 
@@ -56,10 +55,12 @@ for column in tqdm(range(len(roll_columns))):
                 train_df.loc[instance, roll_columns[column]] = fill
             else:
                 train_df.loc[instance, roll_columns[column]] = (
-                    train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == id]).value_counts().idxmax()
+                    train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]] \
+                        [train_df.loc[:, 'Customer_ID'] == id]).value_counts().idxmax()
         else:
             train_df.loc[instance, roll_columns[column]] = (
-                train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]][train_df.loc[:, 'Customer_ID'] == id]).value_counts().idxmax()
+                train_df.drop(invalid_values_instances[column]).loc[:, roll_columns[column]] \
+                    [train_df.loc[:, 'Customer_ID'] == id]).value_counts().idxmax()
 
 train_df.loc[:, 'Age'] = train_df.loc[:, 'Age'].astype('int32')
 
@@ -85,7 +86,7 @@ columns_to = ['Name', 'Monthly_Inhand_Salary', 'Num_Credit_Inquiries', 'Occupati
 
 criterions = [invalid_occupation, '_', 11, 11, 9]
 '''convert to None soo that the will be no value'''
-[train_df.loc[:, columns_to[i+3]].replace(criterions[i], None, inplace=True) for i in range(2)]
+[train_df.loc[:, columns_to[i + 3]].replace(criterions[i], None, inplace=True) for i in range(2)]
 
 unknown_values_indexes = []
 for col_i in range(len(columns_to)):
@@ -106,7 +107,6 @@ for column in tqdm(range(len(columns_to))):
         else:
             start_check_index = unknown_val_index - 8
 
-
         train_df.loc[unknown_val_index, columns_to[column]] = (
             train_df.loc[start_check_index:unknown_val_index + 8, columns_to[column]][
                 train_df.loc[start_check_index:unknown_val_index + 8, 'Customer_ID'] == customer_id]).drop(
@@ -120,16 +120,17 @@ train_df.loc[instance_to_convert, 'Credit_History_Age'] = (_.str.get(0)).astype(
     'int32')
 #
 '''fill mising values in credit age feature'''
-inst_nan_credithist=train_df.index[train_df.Credit_History_Age.isnull()]
-credit_age_values=train_df.loc[:,['Credit_History_Age','Customer_ID']].drop(inst_nan_credithist,axis=0)
-customerid=None
-index_min_age=None
+inst_nan_credithist = train_df.index[train_df.Credit_History_Age.isnull()]
+credit_age_values = train_df.loc[:, ['Credit_History_Age', 'Customer_ID']].drop(inst_nan_credithist, axis=0)
+customerid = None
+index_min_age = None
 # todo: improve o()
 for i in tqdm(inst_nan_credithist):
-    customerid=train_df.loc[i, 'Customer_ID']
-    index_min_age = credit_age_values[credit_age_values.Customer_ID==customerid].sort_values('Credit_History_Age').index[0]
-    train_df.loc[i, 'Credit_History_Age']= (i-index_min_age)+credit_age_values.loc[index_min_age,'Credit_History_Age']
-
+    customerid = train_df.loc[i, 'Customer_ID']
+    index_min_age = \
+    credit_age_values[credit_age_values.Customer_ID == customerid].sort_values('Credit_History_Age').index[0]
+    train_df.loc[i, 'Credit_History_Age'] = (i - index_min_age) + credit_age_values.loc[
+        index_min_age, 'Credit_History_Age']
 
 '''extricate loans types to convert loans types to columns '''
 unique_loans_types = []
@@ -155,27 +156,23 @@ columns_with_null = train_df.columns[train_df.isnull().sum() > 0]
 '''for more accuracy need to be check each customer std, 
     we will omit that and just fill missing data with the mean of the customer'''
 for column in tqdm(columns_with_null[:-1]):
-    insta=train_df.index[train_df[column].isnull()]
-    customer_na_id=train_df.loc[insta,'Customer_ID'].to_list()
-    for indicator,id in zip(insta,customer_na_id):
-        _=train_df.loc[:,column][train_df.loc[:,'Customer_ID']==id]
-        if column=='Num_of_Delayed_Payment':
-            train_df.loc[indicator, column]=int(np.round(_.astype(np.float32).mean()))
+    insta = train_df.index[train_df[column].isnull()]
+    customer_na_id = train_df.loc[insta, 'Customer_ID'].to_list()
+    for indicator, id in zip(insta, customer_na_id):
+        _ = train_df.loc[:, column][train_df.loc[:, 'Customer_ID'] == id]
+        if column == 'Num_of_Delayed_Payment':
+            train_df.loc[indicator, column] = int(np.round(_.astype(np.float32).mean()))
         else:
-            train_df.loc[indicator, column]=np.round(_.astype(np.float32).mean(),2)
-
+            train_df.loc[indicator, column] = np.round(_.astype(np.float32).mean(), 2)
 
 '''drop not important columns' we can do feature engineering on name column by classification by sex '''
 train_df.drop(['ID', 'Name', 'SSN'], axis=1, inplace=True)
-train_df.drop([ 'Month', 'Payment_Behaviour'], axis=1, inplace=True)
-
+train_df.drop(['Month', 'Payment_Behaviour'], axis=1, inplace=True)
 
 get_dum_col = ['Occupation', 'Credit_Mix', 'Payment_of_Min_Amount']
 dumdum = pd.get_dummies(train_df.loc[:, get_dum_col])
 train_df = pd.concat([train_df, dumdum], axis=1)
 train_df.drop(train_df.loc[:, get_dum_col], axis=1, inplace=True)
-
-
 
 # todo: improve dtype convert
 
@@ -186,14 +183,13 @@ train_df.iloc[:, 17] = train_df.iloc[:, 17].astype('float32')
 train_df.iloc[train_df.index[train_df.iloc[:, 17].astype('float32') > 5000000000], 17] = None
 train_df.iloc[:, :] = train_df.iloc[:, :].replace('nan', None)
 train_df.iloc[:, 18:36] = train_df.iloc[:, 18:36].astype('int32')
-train_df.iloc[:, 2]= train_df.iloc[:, 2].astype('float32')
+train_df.iloc[:, 2] = train_df.iloc[:, 2].astype('float32')
 '''predict missing values'''
-
 
 # instances_with_null = train_df.index[train_df.isnull().sum(axis=1) > 0]
 # columns_with_null = train_df.columns[train_df.isnull().sum() > 0]
 # instances_to_predict = train_df.iloc[instances_with_null, :]
-train_df=pd.concat([train_df, train_targets],axis=1)
+train_df = pd.concat([train_df, train_targets], axis=1)
 
 # filling more missing data
 # for column in columns_with_null[:-1]:
@@ -202,15 +198,106 @@ train_df=pd.concat([train_df, train_targets],axis=1)
 # export as csv_file
 train_df.to_csv('train_df.csv', index=False)
 
-
 # todo:check the missin values
 '''check missing values in amount invested monthly column'''
 # custidinvestnull=train_df.loc[:,'Customer_ID'][train_df[columns_with_null[2]].isna()].unique()
 # investcustomerwithnull=train_df[train_df.loc[:,'Customer_ID'].isin(custidinvestnull)]
 
 '''total emi per month invalid values, easy we can see that for example '''
-sns.boxplot(train_df.loc[:,'Annual_Income'])
+
+'''check invalid values in interest rate column, the values not making sense, not for APR and not for montly rate,
+i will assume that its annual interest rate(APR) for the sake of logical threshold (100) '''
+intr_rate_invalid_values = train_df[train_df['Interest_Rate'] > 50].index
+customerid=train_df.Customer_ID[intr_rate_invalid_values].unique()
+train_df.loc[:,['Interest_Rate','Customer_ID']].where(train_df.Customer_ID.isin(customerid)).dropna()
+
+'''emi values that are outliers its seems that its invalid values, we can see the its not influencing other columns 
+    also its high values for some customer that did not take loans at all,check each customer if the std for total emi is above 100,        
+    we will check, and change all values the above 1000 '''
+train_df.Total_EMI_per_month.where(train_df.Num_of_Loan!=0,other=999999,inplace=True)
+
+customer_emi_outlier = train_df.groupby('Customer_ID').Total_EMI_per_month.std()[
+    train_df.groupby('Customer_ID').Total_EMI_per_month.std() > 100].index
+df_Interest_emi_check = train_df.loc[:, ['Customer_ID', 'Total_EMI_per_month','Num_of_Loan','Credit_Score','Monthly_Balance']][train_df.Customer_ID.isin(customer_emi_outlier)]
+indic_3k_to_10k=df_Interest_emi_check.index[pd.DataFrame({'3000':df_Interest_emi_check.Total_EMI_per_month>3000 ,\
+                                                          '1000':df_Interest_emi_check.Total_EMI_per_month<10000}).all(axis=1)]
+cust2=df_Interest_emi_check.loc[indic_3k_to_10k,'Customer_ID'].unique()
+df_cust_3k_to10k=df_Interest_emi_check.where(df_Interest_emi_check.Customer_ID.isin(cust2)).dropna()
+
+emi_val_count=df_Interest_emi_check.value_counts()
+df_Interest_emi_check.describe()
+emi_invalid_values=train_df[train_df.Total_EMI_per_month>10000].index
 
 
-sns.histplot(train_df.loc[:,'Annual_Income'],log_scale=True)
+start_index = None
+end_index = None
+for indicator in tqdm(intr_rate_invalid_values):
+    _ = train_df.loc[indicator, 'Customer_ID']
+    # if condition for reduce o() meaning reduce operations==>reduce time complexity
+    if int(indicator) - 8 > 0:
+        start_index = int(indicator) - 8
+    else:
+        start_index = 0
+    if int(indicator) + 8 < train_df.shape[0] - 1:
+        end_index = int(indicator) + 8
+    else:
+        end_index = train_df.shape[0] - 1
 
+    train_df.loc[indicator, 'Interest_Rate'] = train_df.drop(intr_rate_invalid_values, axis=0) \
+                                                   .loc[start_index:end_index, 'Interest_Rate'][train_df['Customer_ID'] == _].mean()
+
+
+
+for customerid in customer_emi_outlier:
+
+
+'''we can see that we have alot of outliers in annual income'''
+# sns.boxplot(train_df.loc[:,'Annual_Income'])
+
+
+# sns.histplot(train_df.loc[:,'Annual_Income'],log_scale=True)
+
+# check outliers values for each customer annual income
+customer_annual_out = train_df.groupby('Customer_ID').Annual_Income.std().sort_values(ascending=False) \
+    [train_df.groupby('Customer_ID').Annual_Income.std().sort_values(ascending=False) > 0].index
+customer_monthly_salary = train_df.groupby('Customer_ID').Monthly_Inhand_Salary.std()[
+    train_df.groupby('Customer_ID').Monthly_Inhand_Salary.std() > 100].index
+customer_Interest_Rate = train_df.groupby('Customer_ID').Interest_Rate.std()[
+    train_df.groupby('Customer_ID').Interest_Rate.std() > 100].index
+
+# customer_emi_outlier = train_df.groupby('Customer_ID').Total_EMI_per_month.std()[
+#     train_df.groupby('Customer_ID').Total_EMI_per_month.std() > 100].index
+
+df_annual_income_check = train_df.loc[:, ['Customer_ID', 'Annual_Income']][
+    train_df.Customer_ID.isin(customer_annual_out)]
+df_annual_incomeandemi_check = \
+train_df.loc[:, ['Customer_ID', 'Annual_Income', 'Total_EMI_per_month', 'Monthly_Inhand_Salary' \
+                    , 'Num_Credit_Inquiries', 'Outstanding_Debt', 'Amount_invested_monthly', 'Interest_Rate',
+                 'Monthly_Balance']] \
+    [train_df.Customer_ID.isin(customer_annual_out)]
+
+df_salary = train_df.loc[:, ['Customer_ID', 'Monthly_Inhand_Salary']][
+    train_df.Customer_ID.isin(customer_monthly_salary)]
+df_salary_andmore_check = \
+train_df.loc[:, ['Customer_ID', 'Annual_Income', 'Total_EMI_per_month', 'Monthly_Inhand_Salary', 'Num_of_Loan' \
+                    , 'Num_Credit_Inquiries', 'Outstanding_Debt', 'Amount_invested_monthly', 'Interest_Rate',
+                 'Monthly_Balance']] \
+    [train_df.Customer_ID.isin(customer_monthly_salary)]
+df_Interest_Rate = train_df.loc[:, ['Customer_ID', 'Interest_Rate']][train_df.Customer_ID.isin(customer_Interest_Rate)]
+df_Interest_Rate_andmore_check = \
+train_df.loc[:, ['Customer_ID', 'Annual_Income', 'Total_EMI_per_month', 'Monthly_Inhand_Salary', 'Num_of_Loan' \
+                    , 'Num_Credit_Inquiries', 'Outstanding_Debt', 'Amount_invested_monthly', 'Interest_Rate',
+                 'Monthly_Balance']] \
+    [train_df.Customer_ID.isin(customer_Interest_Rate)]
+
+df_Interest_emi_check = train_df.loc[:, ['Customer_ID', 'Total_EMI_per_month']][train_df.Customer_ID.isin(customer_emi_outlier)]
+
+
+
+
+annual_income_scan = df_annual_incomeandemi_check.groupby('Customer_ID').Annual_Income.describe()
+
+pd.DataFrame(train_df.groupby('Customer_ID')['Interest_Rate'])
+train_df.groupby('Customer_ID').Interest_Rate
+train_df.groupby('Customer_ID').Total_EMI_per_month
+train_df.groupby('Customer_ID').Total_EMI_per_month.
