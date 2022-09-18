@@ -30,6 +30,7 @@ train_path = r'train_df.csv'
 train_df = pd.read_csv(train_path)
 train_df.drop('Customer_ID',axis=1,inplace=True)
 train_df = train_df.dropna()
+train_df.drop('Num_of_Delayed_Payment',axis=1,inplace=True)
 
 #todo train_df without get_dummies columns
 # train_df['Credit_Score']= pd.get_dummies(train_df['Credit_Score'])['Good']
@@ -51,10 +52,10 @@ y = train_df['Credit_Score']
 # pca.fit(X)
 # X = pca.fit_transform(X)
 
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=True)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.25, random_state=42, shuffle=True)
 
 '''check random forest model'''
-random_forest = RandomForestClassifier(random_state=42, n_estimators=300)
+random_forest = RandomForestClassifier(n_estimators=64)
 #
 # parameters = {'max_depth': [10, 8]}
 # clf = GridSearchCV(random_forest, parameters, scoring='accuracy')
@@ -120,7 +121,9 @@ clf.fit(X_train, y_train)
 #     print(f'{prediction}\n{list(y[:num])}')
 #
 #     return prediction
-#
+
+
+
 def predict_val(data, y):
     prediction = []
     for i in tqdm(range(0, len(X_val))):

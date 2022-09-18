@@ -13,6 +13,8 @@ from sklearn.metrics import accuracy_score
 path = r'train_df.csv'
 train_df = pd.read_csv('train_df.csv')
 train_df.drop('Customer_ID',axis=1,inplace=True)
+train_df.drop('Num_of_Delayed_Payment',axis=1,inplace=True)
+
 convert_dict = {'Poor': 0, 'Standard': 1, 'Good': 2}
 for (label, num) in convert_dict.items():
     train_df.loc[train_df.index[train_df.loc[:, 'Credit_Score'] == label], 'Credit_Score'] = num

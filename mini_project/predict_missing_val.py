@@ -46,6 +46,7 @@ instances_to_predict = train_df.iloc[instances_with_null, :]
 df_to_train = train_df.drop(instances_with_null, axis=0)
 '''drop Credit_History_Age'''
 
+
 # df_to_train.drop('Credit_Score',axis=1,inplace=True)
 
 
@@ -58,12 +59,12 @@ describe = df_to_train.describe()
 class Model(nn.Module):
     def __init__(self,input_size,num_classes):
         super(Model,self).__init__()
-        self.fc1=nn.Linear(input_size,10)
+        self.fc1=nn.Linear(input_size,50)
         self.fc2=nn.Dropout(0.5)
-        self.fc3=nn.Linear(10,150)
+        self.fc3=nn.Linear(50,56)
         # self.fc4 = nn.Dropout(0.4)
         # self.fc4=nn.Linear(980,input_size)
-        self.fc5=nn.Linear(150,num_classes)
+        self.fc5=nn.Linear(56,num_classes)
 
     def forward(self,x):
         x=self.fc1(x)
@@ -72,7 +73,7 @@ class Model(nn.Module):
         x=self.fc3(x)
         # x=self.fc4(x)
         x=self.fc5(x)
-        x=torch.sigmoid(x)
+        # x=torch.sigmoid(x)
         return x
 
 class Df(Dataset):
@@ -95,8 +96,8 @@ print(f"Using {device} device")
 '''Hyperparameters'''
 num_classes=3
 learning_rate=0.0001
-batch_size=1000
-num_epochs=50
+batch_size=64**2
+num_epochs=300
 
 '''load data'''
 target=pd.DataFrame(df_to_train['Credit_Score']).to_numpy()
