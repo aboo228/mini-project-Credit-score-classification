@@ -235,10 +235,10 @@ emi_invalid_values = df_Interest_emi_check[df_Interest_emi_check.Total_EMI_per_m
 '''check annual income'''
 
 customer_annual_out = train_df.groupby('Customer_ID').Annual_Income.std() \
-    [train_df.groupby('Customer_ID').Annual_Income.std() > 200000].index
+    [train_df.groupby('Customer_ID').Annual_Income.std() > 10000].index
 
 annual_invalid_values_ind = train_df.Annual_Income.index[
-    train_df.Annual_Income.where(train_df.Customer_ID.isin(customer_annual_out)) > 1000000]
+    train_df.Annual_Income.where(train_df.Customer_ID.isin(customer_annual_out)) > 200000]
 
 emi_inter_annual_in_indicators = [emi_invalid_values, intr_rate_invalid_values, annual_invalid_values_ind]
 
