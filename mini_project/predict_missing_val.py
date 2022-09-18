@@ -29,7 +29,7 @@ train_df = pd.read_csv('train_df.csv')
 '''convert target values to numbers: poor:0 ,standard:1, good:2'''
 # Payment_of_Min_Amount_get_dummies = pd.get_dummies(df['Payment_of_Min_Amount'], drop_first=True)
 # df = pd.concat([df, Payment_of_Min_Amount_get_dummies], axis=1)
-
+train_df.drop('Customer_ID',axis=1,inplace=True)
 convert_dict={'Poor':0,'Standard':1,'Good':2}
 for (label,num) in convert_dict.items():
     train_df.loc[train_df.index[train_df.loc[:,'Credit_Score']==label],'Credit_Score']=num
@@ -58,20 +58,21 @@ describe = df_to_train.describe()
 class Model(nn.Module):
     def __init__(self,input_size,num_classes):
         super(Model,self).__init__()
-        self.fc1=nn.Linear(input_size,6)
-        # self.fc2=nn.Dropout(0.3)
-        self.fc3=nn.Linear(6,113)
+        self.fc1=nn.Linear(input_size,10)
+        self.fc2=nn.Dropout(0.5)
+        self.fc3=nn.Linear(10,150)
         # self.fc4 = nn.Dropout(0.4)
         # self.fc4=nn.Linear(980,input_size)
-        self.fc5=nn.Linear(113,num_classes)
+        self.fc5=nn.Linear(150,num_classes)
 
     def forward(self,x):
         x=self.fc1(x)
-        # nn.functional.leaky_relu(x,inplace=True)
+        # x=torch.sigmoid(x)
+        x=self.fc2(x)
         x=self.fc3(x)
         # x=self.fc4(x)
         x=self.fc5(x)
-        # x=torch.softmax(x,dim=1)
+        x=torch.sigmoid(x)
         return x
 
 class Df(Dataset):
@@ -93,9 +94,9 @@ device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using {device} device")
 '''Hyperparameters'''
 num_classes=3
-learning_rate=0.00006
-batch_size=32*27
-num_epochs=100
+learning_rate=0.001
+batch_size=1000
+num_epochs=50
 
 '''load data'''
 target=pd.DataFrame(df_to_train['Credit_Score']).to_numpy()

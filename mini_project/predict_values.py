@@ -17,14 +17,15 @@ import optuna
 
 
 train=pd.read_csv("train_df.csv")
+train.drop('Customer_ID',axis=1,inplace=True)
 convert_dict={'Poor':0,'Standard':1,'Good':2}
 for (label,num) in convert_dict.items():
     train.loc[train.index[train.loc[:,'Credit_Score']==label],'Credit_Score']=num
 
-annual_income_loutliers=train.index[train.loc[:,'Annual_Income']>170000]
+# annual_income_loutliers=train.index[train.loc[:,'Annual_Income']>170000]
 
 
-train=train.drop(annual_income_loutliers,axis=0)
+# train=train.drop(annual_income_loutliers,axis=0)
 
 instances_with_null = train.index[train.isnull().sum(axis=1) > 0]
 columns_with_null = train.columns[train.isnull().sum() > 0]

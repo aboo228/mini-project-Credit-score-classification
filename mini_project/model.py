@@ -28,6 +28,7 @@ from keras.layers import Dense,Dropout,Activation
 train_path = r'train_df.csv'
 
 train_df = pd.read_csv(train_path)
+train_df.drop('Customer_ID',axis=1,inplace=True)
 train_df = train_df.dropna()
 
 #todo train_df without get_dummies columns
