@@ -94,7 +94,7 @@ device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using {device} device")
 '''Hyperparameters'''
 num_classes=3
-learning_rate=0.001
+learning_rate=0.0001
 batch_size=1000
 num_epochs=50
 
