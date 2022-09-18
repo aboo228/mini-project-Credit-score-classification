@@ -240,13 +240,27 @@ customer_annual_out = train_df.groupby('Customer_ID').Annual_Income.std() \
 annual_invalid_values_ind = train_df.Annual_Income.index[
     train_df.Annual_Income.where(train_df.Customer_ID.isin(customer_annual_out)) > 200000]
 
-emi_inter_annual_in_indicators = [emi_invalid_values, intr_rate_invalid_values, annual_invalid_values_ind]
+'''check num credit inquiries'''
+custid_numcredit_outlier=(train_df.groupby('Customer_ID').Num_Credit_Inquiries.std())\
+    [train_df.groupby('Customer_ID').Num_Credit_Inquiries.std()>10].index
+
+df_numcredit_check_outliers=train_df.iloc[:,:16].where(train_df.Customer_ID.isin(custid_numcredit_outlier)).dropna()
+
+
+df_numcredit_out_percustomer=train_df.Num_Credit_Inquiries.index\
+    [train_df.Num_Credit_Inquiries.where(train_df.Customer_ID.isin(custid_numcredit_outlier))>30]
+'''check num of delyed payment'''
+
+
+
+indicators_to_val = [emi_invalid_values, intr_rate_invalid_values, \
+                                  annual_invalid_values_ind,df_numcredit_out_percustomer]
+columns_to_updateval=['Total_EMI_per_month', 'Interest_Rate', 'Annual_Income','Num_Credit_Inquiries']
+customer_ids=[customer_emi_outlier, customerid_inter_rate, customer_annual_out,custid_numcredit_outlier]
 
 # start_index = None
 # end_index = None
-for column, custids, indicator_list in tqdm(zip(['Total_EMI_per_month', 'Interest_Rate', 'Annual_Income'],
-                                                [customer_emi_outlier, customerid_inter_rate, customer_annual_out],
-                                                emi_inter_annual_in_indicators)):
+for column, custids, indicator_list in tqdm(zip(columns_to_updateval,customer_ids,indicators_to_val)):
     df = train_df.loc[:, ['Customer_ID', column]][train_df.Customer_ID.isin(custids)]
     for indicator in indicator_list:
         _ = df.loc[indicator, 'Customer_ID']
@@ -294,6 +308,7 @@ df_annual_incomeandemi_check = \
 #                     , 'Num_Credit_Inquiries', 'Outstanding_Debt', 'Amount_invested_monthly', 'Interest_Rate',
 #                  'Monthly_Balance']] \
 #     [train_df.Customer_ID.isin(customer_monthly_salary)]
+
 # df_Interest_Rate = train_df.loc[:, ['Customer_ID', 'Interest_Rate']][train_df.Customer_ID.isin(customer_Interest_Rate)]
 # df_Interest_Rate_andmore_check = \
 # train_df.loc[:, ['Customer_ID', 'Annual_Income', 'Total_EMI_per_month', 'Monthly_Inhand_Salary', 'Num_of_Loan' \

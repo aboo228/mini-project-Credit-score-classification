@@ -51,10 +51,10 @@ y = train_df['Credit_Score']
 # pca.fit(X)
 # X = pca.fit_transform(X)
 
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.1, random_state=42, shuffle=True)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=True)
 
 '''check random forest model'''
-random_forest = RandomForestClassifier(random_state=42, n_estimators=2)
+random_forest = RandomForestClassifier(random_state=42, n_estimators=300)
 #
 # parameters = {'max_depth': [10, 8]}
 # clf = GridSearchCV(random_forest, parameters, scoring='accuracy')
