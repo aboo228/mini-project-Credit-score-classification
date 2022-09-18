@@ -274,24 +274,24 @@ customer_ids=[customer_emi_outlier, customerid_inter_rate, customer_annual_out,c
 
 # start_index = None
 # end_index = None
-for column, custids, indicator_list in tqdm(zip(columns_to_updateval,customer_ids,indicators_to_val)):
-    df = train_df.loc[:, ['Customer_ID', column]][train_df.Customer_ID.isin(custids)]
-    for indicator in indicator_list:
-        _ = df.loc[indicator, 'Customer_ID']
-        # if condition for reduce o() meaning reduce operations==>reduce time complexity
-        #         if int(indicator) - 8 > 0:
-        #             start_index = int(indicator) - 8
-        #         else:
-        #             start_index = 0
-        #         if int(indicator) + 8 < train_df.shape[0] - 1:
-        #             end_index = int(indicator) + 8
-        #         else:
-        #             end_index = train_df.shape[0] - 1
+# for column, custids, indicator_list in tqdm(zip(columns_to_updateval,customer_ids,indicators_to_val)):
+#     df = train_df.loc[:, ['Customer_ID', column]][train_df.Customer_ID.isin(custids)]
+#     for indicator in indicator_list:
+#         _ = df.loc[indicator, 'Customer_ID']
+#         # if condition for reduce o() meaning reduce operations==>reduce time complexity
+#         #         if int(indicator) - 8 > 0:
+#         #             start_index = int(indicator) - 8
+#         #         else:
+#         #             start_index = 0
+#         #         if int(indicator) + 8 < train_df.shape[0] - 1:
+#         #             end_index = int(indicator) + 8
+#         #         else:
+#         #             end_index = train_df.shape[0] - 1
+#
+#         train_df.loc[indicator, column] = df.drop(indicator_list, axis=0) \
+#                                               .loc[:, column][df['Customer_ID'] == _].mean()
 
-        train_df.loc[indicator, column] = df.drop(indicator_list, axis=0) \
-                                              .loc[:, column][df['Customer_ID'] == _].mean()
-
-train_df.Num_of_Delayed_Payment.where(~(train_df.Num_of_Delayed_Payment<0),lambda x: np.abs(x),inplace=True)
+# train_df.Num_of_Delayed_Payment.where(~(train_df.Num_of_Delayed_Payment<0),lambda x: np.abs(x),inplace=True)
 sns.boxplot(train_df.Num_of_Delayed_Payment)
 plt.show()
 '''we can see that we have alot of outliers in annual income'''
