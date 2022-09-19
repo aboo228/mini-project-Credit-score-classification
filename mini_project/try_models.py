@@ -49,7 +49,8 @@ for pipe in tqdm([pipeline1, pipeline2, pipeline3]):
     pipe.fit(x_train, y_train)
     acc_train=(np.argmax(pipe.predict(x_train),axis=1)==np.argmax(y_train.to_numpy(),axis=1)).sum()/ y_train.shape[0]
     acc_test=(np.argmax(pipe.predict(x_test),axis=1)==np.argmax(y_test.to_numpy(),axis=1)).sum()/ y_test.shape[0]
-    acc_all=(np.argmax(pipe.predict(train_dfall.iloc[:,1:-1]))==np.argmax(targetall.to_numpy(),axis=1)).sum()/ targetall.shape[0]
+    acc_all=(np.argmax(pipe.predict(train_dfall.iloc[:,1:-1]),axis=1)==np.argmax(targetall.to_numpy(),axis=1)).sum()/ targetall.shape[0]
     print(f'acc_train:{acc_train}\nacc_test:{acc_test}\nacc_all{acc_all}')
 
 def models_votes(x,target):
+    np.argmax(pipeline1.predict(x),axis=1),
