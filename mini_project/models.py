@@ -56,7 +56,7 @@ def objective(trial):
     #     dim_reduc_algo = 'passthrough'
     # # integer from 1 to 19 with steps of 2
     knn_n_neighbors = trial.suggest_int('knn_n_neighbors', 7, 15, 2)
-    knn_metric = trial.suggest_categorical('knn_metric', ['manhattan'])
+    knn_metric = trial.suggest_categorical('knn_metric', ['euclidean'])
     knn_weights = trial.suggest_categorical('knn_weights', ['uniform', 'distance'])
 
     estimator = KNeighborsClassifier(n_neighbors=knn_n_neighbors, metric=knn_metric, weights=knn_weights)
