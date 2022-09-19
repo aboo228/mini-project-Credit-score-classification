@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split,learning_curve,cross_val_sc
 from sklearn.linear_model import LinearRegression, SGDRegressor,Ridge,ElasticNet
 from sklearn.ensemble import RandomForestRegressor,GradientBoostingRegressor, AdaBoostRegressor
 from sklearn.pipeline import make_pipeline
+from sklearn.neighbors import NearestNeighbors,
 from sklearn.preprocessing import StandardScaler,RobustScaler
 from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor

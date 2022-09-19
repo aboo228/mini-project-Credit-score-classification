@@ -55,8 +55,8 @@ def objective(trial):
     # else:
     #     dim_reduc_algo = 'passthrough'
     # # integer from 1 to 19 with steps of 2
-    knn_n_neighbors = trial.suggest_int('knn_n_neighbors', 7, 121, 2)
-    knn_metric = trial.suggest_categorical('knn_metric', ['euclidean', 'manhattan'])
+    knn_n_neighbors = trial.suggest_int('knn_n_neighbors', 7, 13, 2)
+    knn_metric = trial.suggest_categorical('knn_metric', ['manhattan'])
     knn_weights = trial.suggest_categorical('knn_weights', ['uniform', 'distance'])
 
     estimator = KNeighborsClassifier(n_neighbors=knn_n_neighbors, metric=knn_metric, weights=knn_weights)
@@ -72,14 +72,16 @@ def objective(trial):
 
 
 study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=100)
+study.optimize(objective, n_trials=10)
 print(study.best_trial)
 
-def objective():
-    max_depth=int(trial.suggest_loguniform('max_depth',1,4))
-    n_estimators = trial.suggest_int('n_estimators',10,500)
+def objectivetree(trial):
+    max_depth=int(trial.suggest_loguniform('max_depth',1,3))
+    n_estimators = trial.suggest_int('n_estimators',10,76)
     model=RandomForestClassifier(n_estimators=n_estimators,max_depth=max_depth)
     return cross_val_score(model,x_train,y_train,cv=5).mean()
 
 tree_study=optuna.create_study(direction='maximize')
-tree_study.optimize(objective, n_trials=10)
+tree_study.optimize(objectivetree, n_trials=10)
+print(tree_study.best_trial)
+
