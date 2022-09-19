@@ -5,22 +5,18 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression, SGDRegressor,LogisticRegression
+from sklearn.linear_model import LinearRegression, SGDRegressor, LogisticRegression
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import RobustScaler, StandardScaler
 import torch
 from torch import nn
-from torch.utils.data import DataLoader,Dataset
+from torch.utils.data import DataLoader, Dataset
 # from torchvision import datasets, transforms
 from tqdm import trange, tqdm
 from torch.utils.tensorboard import SummaryWriter
 import torchvision
 import optuna
-
-
-
-
 
 # import Credit_Score_Classification.py
 
@@ -29,10 +25,10 @@ train_df = pd.read_csv('train_df.csv')
 '''convert target values to numbers: poor:0 ,standard:1, good:2'''
 # Payment_of_Min_Amount_get_dummies = pd.get_dummies(df['Payment_of_Min_Amount'], drop_first=True)
 # df = pd.concat([df, Payment_of_Min_Amount_get_dummies], axis=1)
-train_df.drop('Customer_ID',axis=1,inplace=True)
-convert_dict={'Poor':0,'Standard':1,'Good':2}
-for (label,num) in convert_dict.items():
-    train_df.loc[train_df.index[train_df.loc[:,'Credit_Score']==label],'Credit_Score']=num
+train_df.drop('Customer_ID', axis=1, inplace=True)
+convert_dict = {'Poor': 0, 'Standard': 1, 'Good': 2}
+for (label, num) in convert_dict.items():
+    train_df.loc[train_df.index[train_df.loc[:, 'Credit_Score'] == label], 'Credit_Score'] = num
 
 # df = df.astype('float64')
 #
@@ -46,7 +42,6 @@ instances_to_predict = train_df.iloc[instances_with_null, :]
 df_to_train = train_df.drop(instances_with_null, axis=0)
 '''drop Credit_History_Age'''
 
-
 # df_to_train.drop('Credit_Score',axis=1,inplace=True)
 
 
@@ -57,84 +52,87 @@ describe = df_to_train.describe()
 
 # df_to_train=pd.get_dummies(df_to_train)
 class Model(nn.Module):
-    def __init__(self,input_size,num_classes):
-        super(Model,self).__init__()
-        self.fc1=nn.Linear(input_size,50)
-        self.fc2=nn.Dropout(0.5)
-        self.fc3=nn.Linear(50,56)
-        # self.fc4 = nn.Dropout(0.4)
-        # self.fc4=nn.Linear(980,input_size)
-        self.fc5=nn.Linear(56,num_classes)
+    def __init__(self, input_size, num_classes):
+        super(Model, self).__init__()
+        self.fc1 = nn.Linear(input_size, 50)
+        self.fc2 = nn.Dropout(0.5)
+        self.fc3 = nn.Linear(50, 180)
+        self.fc4 = nn.Dropout(0.4)
+        self.fc5 = nn.Linear(180, input_size)
+        self.fc6 = nn.Linear(input_size, num_classes)
 
-    def forward(self,x):
-        x=self.fc1(x)
+    def forward(self, x):
+        x = self.fc1(x)
         # x=torch.sigmoid(x)
-        x=self.fc2(x)
-        x=self.fc3(x)
-        # x=self.fc4(x)
-        x=self.fc5(x)
-        # x=torch.sigmoid(x)
+        x = self.fc2(x)
+        x = self.fc3(x)
+        x = self.fc4(x)
+        x = self.fc5(x)
+        x = torch.sigmoid(x)
+        x = self.fc6(x)
         return x
+
 
 class Df(Dataset):
     def __init__(self):
-        self.x=torch.tensor(x_train,dtype=torch.float32)
-        self.y=torch.tensor(y_train.astype(np.int32),dtype=torch.int32).view(-1)
-        self.instances=self.x.shape[0]
+        self.x = torch.tensor(x_train, dtype=torch.float32)
+        self.y = torch.tensor(y_train.astype(np.int32), dtype=torch.int32).view(-1)
+        self.instances = self.x.shape[0]
 
     def __getitem__(self, index):
-        return self.x[index],self.y[index]
+        return self.x[index], self.y[index]
 
     def __len__(self):
         return self.instances
 
-df_to_train.iloc[:,:-1]=df_to_train.iloc[:,:-1].astype(np.float32)
 
+df_to_train.iloc[:, :-1] = df_to_train.iloc[:, :-1].astype(np.float32)
 
-device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using {device} device")
 '''Hyperparameters'''
-num_classes=3
-learning_rate=0.0001
-batch_size=64**2
-num_epochs=300
+num_classes = 3
+learning_rate = 0.00001
+batch_size = 64 ** 2
+num_epochs = 10000
 
 '''load data'''
-target=pd.DataFrame(df_to_train['Credit_Score']).to_numpy()
+target = pd.DataFrame(df_to_train['Credit_Score']).to_numpy()
 # df_to_train=df_to_train.iloc[:,:17]
-input_size=df_to_train.shape[1]-1
+input_size = df_to_train.shape[1] - 1
 # Y=pd.get_dummies(df_to_train['Credit_Score']).to_numpy()
-x_train,x_test,y_train,y_test=train_test_split(df_to_train.drop('Credit_Score',axis=1),target,random_state=42,stratify=target)
+x_train, x_test, y_train, y_test = train_test_split(df_to_train.drop('Credit_Score', axis=1), target, random_state=42,
+                                                    stratify=target)
 
-scaler=StandardScaler()
-x_train=scaler.fit_transform(x_train)
-x_test=scaler.transform(x_test)
-df=Df()
+scaler = StandardScaler()
+x_train = scaler.fit_transform(x_train)
+x_test = scaler.transform(x_test)
+df = Df()
 
-train_loader=DataLoader(dataset=df,batch_size=batch_size,shuffle=False)
+train_loader = DataLoader(dataset=df, batch_size=batch_size, shuffle=False)
 # test_loader=DataLoader(dataset=df,batch_size=batch_size,shuffle=False)
 # train_loader=DataLoader(dataset=tuple(zip(x_train,y_train)),batch_size=batch_size,shuffle=False)
 # test_loader=DataLoader(dataset=tuple(zip(x_test.to_numpy(),y_test.to_numpy())),batch_size=batch_size,shuffle=False)
 '''Initialize network'''
-model=Model(input_size=input_size,num_classes=num_classes).to(device)
+model = Model(input_size=input_size, num_classes=num_classes).to(device)
 '''loss and optimizer'''
-criterion=nn.CrossEntropyLoss()
+criterion = nn.CrossEntropyLoss()
 
-optimizer=torch.optim.Adam(model.parameters(),lr=learning_rate)
-losses=[]
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+losses = []
 '''train network'''
 for epoch in tqdm(range(num_epochs)):
-    for batch_idc, (data,targets) in enumerate(train_loader):
+    for batch_idc, (data, targets) in enumerate(train_loader):
         # get data to cuda
-        data=data.to(device=device)
-        targets=targets.type(torch.LongTensor).to(device=device)
+        data = data.to(device=device)
+        targets = targets.type(torch.LongTensor).to(device=device)
 
-#         forward
-        predictions=model(data)
-        loss=criterion(predictions,targets)
+        #         forward
+        predictions = model(data)
+        loss = criterion(predictions, targets)
 
         # backward
-        if epoch>0:
+        if epoch > 0:
             plt.scatter(epoch, loss.item())
             losses.append(loss.item())
             print(f'epoch:{epoch}\t,iter: {batch_idc}\t,loss:{loss.item()} ')
@@ -143,17 +141,16 @@ for epoch in tqdm(range(num_epochs)):
         optimizer.step()
         optimizer.zero_grad(set_to_none=True)
 
-xx_train=torch.tensor(x_train,dtype=torch.float32).to(device)
-xx_test=torch.tensor(x_test,dtype=torch.float32).to(device)
+xx_train = torch.tensor(x_train, dtype=torch.float32).to(device)
+xx_test = torch.tensor(x_test, dtype=torch.float32).to(device)
 with torch.no_grad():
-    x_train_pred=model(xx_train).to('cpu')
-    x_test_pred=model(xx_test).to('cpu')
+    x_train_pred = model(xx_train).to('cpu')
+    x_test_pred = model(xx_test).to('cpu')
 plt.show()
 
-acc_train=(torch.max(x_train_pred,1)[1].numpy().reshape(-1,1)==y_train).sum()/y_train.shape[0]
-acc_test=(torch.max(x_test_pred,1)[1].numpy().reshape(-1,1)==y_test).sum()/y_test.shape[0]
+acc_train = (torch.max(x_train_pred, 1)[1].numpy().reshape(-1, 1) == y_train).sum() / y_train.shape[0]
+acc_test = (torch.max(x_test_pred, 1)[1].numpy().reshape(-1, 1) == y_test).sum() / y_test.shape[0]
 print(f'train accuracy:{acc_train}\ntest accuracy:{acc_test}')
-
 
 # img_grid=torchvision.utils.make_grid(torch.tensor(losses))
 # writer.add_image('loss',img_grid)
@@ -220,8 +217,8 @@ print(f'train accuracy:{acc_train}\ntest accuracy:{acc_test}')
 # print(sgd.predict(x_test[:15]))
 # print(reg.predict(x_train[:15]))
 # print(sgd.predict(x_train[:15]))
-    # xs=X.copy()
-    # xs=RobustScaler().fit(xs).transform(xs)
+# xs=X.copy()
+# xs=RobustScaler().fit(xs).transform(xs)
 # norm=StandardScaler().fit(X)
 #     X=transformer.transform(X)
 
@@ -243,4 +240,3 @@ print(f'train accuracy:{acc_train}\ntest accuracy:{acc_test}')
 #     nn_model.zero_grad()
 #     loss.backward()
 #     optimizer.step()
-

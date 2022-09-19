@@ -353,19 +353,56 @@ upper=None
 lower=None
 
 
-for column in tqdm(columns_to_remove_outleirs):
-    q1=train_df.loc[:,column].quantile(0.25)
-    q3=train_df.loc[:, column].quantile(0.75)
-    iqr=q3-q1
-    upper=q3+2*iqr
-    lower=q1-2*iqr
-    train_df=train_df[train_df.loc[:,column]<upper]
-    train_df=train_df[train_df.loc[:,column]>lower]
+# for column in tqdm(columns_to_remove_outleirs):
+#     q1=train_df.loc[:,column].quantile(0.25)
+#     q3=train_df.loc[:, column].quantile(0.75)
+#     iqr=q3-q1
+#     upper=q3+2*iqr
+#     lower=q1-2*iqr
+#     train_df=train_df[train_df.loc[:,column]<upper]
+#     train_df=train_df[train_df.loc[:,column]>lower]
 
 train_df.to_csv('train_df.csv', index=False)
 
 
-
+#
 # for i in columns_to_boxplot:
 #     sns.boxplot(train_df.loc[:,i])
 #     plt.show()
+#
+# train_df2=train_df
+# for column in tqdm(columns_to_remove_outleirs):
+#     q1=train_df2.loc[:,column].quantile(0.25)
+#     q3=train_df2.loc[:, column].quantile(0.75)
+#     iqr=q3-q1
+#     upper=q3+1.5*iqr
+#     lower=q1-1.5*iqr
+#     train_df2=train_df2[train_df2.loc[:,column]<upper]
+#     train_df2=train_df2[train_df2.loc[:,column]>lower]
+# print(train_df2.shape)
+
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier,GradientBoostingClassifier
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import RobustScaler, StandardScaler
+from sklearn.pipeline import make_pipeline
+
+
+# convert_dict={'Poor':0,'Standard':1,'Good':2}
+# for (label,num) in convert_dict.items():
+#     train_df2.loc[train_df2.index[train_df2.loc[:,'Credit_Score']==label],'Credit_Score']=num
+target=pd.get_dummies(train_df2.Credit_Score)
+x_train,x_test, y_train, y_test = train_test_split(train_df2.iloc[:,1:-1],target,test_size=0.25,stratify=target, random_state=42)
+modelknn=KNeighborsClassifier(n_neighbors=9,metric='manhattan',weights='distance')
+modeldecisiontree=DecisionTreeClassifier()
+modelrandom=RandomForestClassifier(n_estimators=64*3)
+modelgboost=GradientBoostingClassifier(n_estimators=64*3)
+models_selection=[modelknn,modelgboost,modelrandom,modeldecisiontree]
+pipeline=None
+score=None
+# for model in models_selection:
+#     pipeline=make_pipeline(StandardScaler(),model)
+#     pipeline.fit(x_train, y_train)
+#     score=cross_val_score(pipeline,x_train,y_train)
+#     print(score.mean())
