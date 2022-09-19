@@ -370,15 +370,15 @@ train_df.to_csv('train_df.csv', index=False)
 #     sns.boxplot(train_df.loc[:,i])
 #     plt.show()
 #
-# train_df2=train_df
-# for column in tqdm(columns_to_remove_outleirs):
-#     q1=train_df2.loc[:,column].quantile(0.25)
-#     q3=train_df2.loc[:, column].quantile(0.75)
-#     iqr=q3-q1
-#     upper=q3+1.5*iqr
-#     lower=q1-1.5*iqr
-#     train_df2=train_df2[train_df2.loc[:,column]<upper]
-#     train_df2=train_df2[train_df2.loc[:,column]>lower]
+train_df2=train_df
+for column in tqdm(columns_to_remove_outleirs):
+    q1=train_df2.loc[:,column].quantile(0.25)
+    q3=train_df2.loc[:, column].quantile(0.75)
+    iqr=q3-q1
+    upper=q3+1.5*iqr
+    lower=q1-1.5*iqr
+    train_df2=train_df2[train_df2.loc[:,column]<upper]
+    train_df2=train_df2[train_df2.loc[:,column]>lower]
 # print(train_df2.shape)
 
 from sklearn.neighbors import KNeighborsClassifier
@@ -393,8 +393,8 @@ from sklearn.pipeline import make_pipeline
 # for (label,num) in convert_dict.items():
 #     train_df2.loc[train_df2.index[train_df2.loc[:,'Credit_Score']==label],'Credit_Score']=num
 
-# target=pd.get_dummies(train_df2.Credit_Score)
-# x_train,x_test, y_train, y_test = train_test_split(train_df2.iloc[:,1:-1],target,test_size=0.25,stratify=target, random_state=42)
+target=pd.get_dummies(train_df2.Credit_Score)
+x_train,x_test, y_train, y_test = train_test_split(train_df2.iloc[:,1:-1],target,test_size=0.25,stratify=target, random_state=42)
 # modelknn=KNeighborsClassifier(n_neighbors=9,metric='manhattan',weights='distance')
 # modeldecisiontree=DecisionTreeClassifier()
 # modelrandom=RandomForestClassifier(n_estimators=64*3)

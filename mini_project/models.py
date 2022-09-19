@@ -55,7 +55,7 @@ def objective(trial):
     # else:
     #     dim_reduc_algo = 'passthrough'
     # # integer from 1 to 19 with steps of 2
-    knn_n_neighbors = trial.suggest_int('knn_n_neighbors', 7, 13, 2)
+    knn_n_neighbors = trial.suggest_int('knn_n_neighbors', 7, 15, 2)
     knn_metric = trial.suggest_categorical('knn_metric', ['manhattan'])
     knn_weights = trial.suggest_categorical('knn_weights', ['uniform', 'distance'])
 
@@ -65,7 +65,7 @@ def objective(trial):
     pipeline = make_pipeline(scaler, estimator)
 
     # evaluate score by cross_validation
-    score = cross_val_score(pipeline, x_train, y_train)
+    score = cross_val_score(pipeline, x_train, y_train,cv=10)
     # f1 = score()
     return score.mean()
 
@@ -76,10 +76,10 @@ study.optimize(objective, n_trials=10)
 print(study.best_trial)
 
 def objectivetree(trial):
-    max_depth=int(trial.suggest_loguniform('max_depth',1,3))
-    n_estimators = trial.suggest_int('n_estimators',10,76)
+    max_depth=int(trial.suggest_discrete_uniform('max_depth',1,5,1))
+    n_estimators = trial.suggest_int('n_estimators',10,700)
     model=RandomForestClassifier(n_estimators=n_estimators,max_depth=max_depth)
-    return cross_val_score(model,x_train,y_train,cv=5).mean()
+    return cross_val_score(model,x_train,y_train,cv=10).mean()
 
 tree_study=optuna.create_study(direction='maximize')
 tree_study.optimize(objectivetree, n_trials=10)
