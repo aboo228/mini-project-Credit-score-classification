@@ -392,15 +392,16 @@ from sklearn.pipeline import make_pipeline
 # convert_dict={'Poor':0,'Standard':1,'Good':2}
 # for (label,num) in convert_dict.items():
 #     train_df2.loc[train_df2.index[train_df2.loc[:,'Credit_Score']==label],'Credit_Score']=num
-target=pd.get_dummies(train_df2.Credit_Score)
-x_train,x_test, y_train, y_test = train_test_split(train_df2.iloc[:,1:-1],target,test_size=0.25,stratify=target, random_state=42)
-modelknn=KNeighborsClassifier(n_neighbors=9,metric='manhattan',weights='distance')
-modeldecisiontree=DecisionTreeClassifier()
-modelrandom=RandomForestClassifier(n_estimators=64*3)
-modelgboost=GradientBoostingClassifier(n_estimators=64*3)
-models_selection=[modelknn,modelgboost,modelrandom,modeldecisiontree]
-pipeline=None
-score=None
+
+# target=pd.get_dummies(train_df2.Credit_Score)
+# x_train,x_test, y_train, y_test = train_test_split(train_df2.iloc[:,1:-1],target,test_size=0.25,stratify=target, random_state=42)
+# modelknn=KNeighborsClassifier(n_neighbors=9,metric='manhattan',weights='distance')
+# modeldecisiontree=DecisionTreeClassifier()
+# modelrandom=RandomForestClassifier(n_estimators=64*3)
+# modelgboost=GradientBoostingClassifier(n_estimators=64*3)
+# models_selection=[modelknn,modelgboost,modelrandom,modeldecisiontree]
+# pipeline=None
+# score=None
 # for model in models_selection:
 #     pipeline=make_pipeline(StandardScaler(),model)
 #     pipeline.fit(x_train, y_train)
