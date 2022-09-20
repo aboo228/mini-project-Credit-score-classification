@@ -43,7 +43,7 @@ acc_test = None
 acc_all = None
 
 for pipe in tqdm([pipeline1, pipeline2]):
-    pipe .fit(x_train, y_train)
+    pipe.fit(x_train, y_train)
     acc_train = (np.argmax(pipe.predict(x_train), axis=1) == np.argmax(y_train.to_numpy(), axis=1)).sum()/y_train.shape[0]
     acc_test = (np.argmax(pipe.predict(x_test), axis=1) == np.argmax(y_test.to_numpy(), axis=1)).sum() / y_test.shape[0]
     acc_all = (np.argmax(pipe.predict(train_dfall.iloc[:, 1:-1]), axis=1) == np.argmax(targetall.to_numpy(),axis=1)).sum() / targetall.shape[0]
@@ -52,18 +52,20 @@ for pipe in tqdm([pipeline1, pipeline2]):
 
 ##################
 convert_dict = {'Poor': 0, 'Standard': 1, 'Good': 2}
-for (label, num) in convert_dict.items():
-    train_df2.loc[train_df2.index[train_df2.loc[:, 'Credit_Score'] == label], 'Credit_Score'] = float(num)
+data_list = [train_df2, train_dfall]
+for data in data_list:
+    for (label, num) in convert_dict.items():
+        data.loc[data.index[data.loc[:, 'Credit_Score'] == label], 'Credit_Score'] = float(num)
+    data['Credit_Score'] = data['Credit_Score'].astype('float32')
 
 targetall = train_dfall.Credit_Score
 target = train_df2.Credit_Score
-x_train, x_test, y_train, y_test = train_test_split(train_df2.iloc[:, 1:-1], target, test_size=0.25, stratify=target,
-                                                    random_state=42)
+x_train, x_test, y_train, y_test = train_test_split(train_df2.iloc[:, 1:-1], target, test_size=0.25, stratify=target,random_state=42)
 
-pipeline3 .fit(x_train, y_train)
-acc_train = (np.argmax(pipeline3.predict(x_train), axis=1) == np.argmax(y_train.to_numpy(), axis=1)).sum() / y_train.shape[0]
-acc_test = (np.argmax(pipeline3.predict(x_test), axis=1) == np.argmax(y_test.to_numpy(), axis=1)).sum() / y_test.shape[0]
-acc_all = (np.argmax(pipeline3.predict(train_dfall.iloc[:, 1:-1]), axis=1) == np.argmax(targetall.to_numpy(),axis=1)).sum() / targetall.shape[0]
+pipeline3.fit(x_train, y_train)
+acc_train = (pipeline3.predict(x_train) == y_train.to_numpy()).sum() / y_train.shape[0]
+acc_test = (pipeline3.predict(x_test) == y_test.to_numpy()).sum() / y_test.shape[0]
+acc_all = (pipeline3.predict(train_dfall.iloc[:, 1:-1]) == targetall.to_numpy()).sum() / targetall.shape[0]
 print(f'acc_train:{acc_train}\nacc_test:{acc_test}\nacc_all{acc_all}')
 ##################
 
