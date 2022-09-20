@@ -41,7 +41,7 @@ pipeline3 = make_pipeline(RobustScaler(), GradientBoostingClassifier())
 acc_train = None
 acc_test = None
 acc_all = None
-
+# klkl
 for pipe in tqdm([pipeline1, pipeline2]):
     pipe.fit(x_train, y_train)
     acc_train = (np.argmax(pipe.predict(x_train), axis=1) == np.argmax(y_train.to_numpy(), axis=1)).sum()/y_train.shape[0]
