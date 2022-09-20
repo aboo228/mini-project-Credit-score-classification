@@ -51,6 +51,9 @@ print('Accuracy: %.2f' % (accuracy*100))
 predict = model.predict(X_val)
 
 a = pd.DataFrame(predict)
-b = a.copy()
+b = a[0]
 for i in b:
-    if b[0]
+    if a[0]
+
+new_df = pd.DataFrame(predict).idxmax(axis=1)
+new_df.groupby(new_df).count()

@@ -50,7 +50,7 @@ for pipe in tqdm([pipeline1, pipeline2]):
     print(f'acc_train:{acc_train}\nacc_test:{acc_test}\nacc_all{acc_all}')
 
 
-##################
+####################
 convert_dict = {'Poor': 0, 'Standard': 1, 'Good': 2}
 data_list = [train_df2, train_dfall]
 for data in data_list:
