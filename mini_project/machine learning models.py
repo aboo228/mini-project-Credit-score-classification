@@ -105,15 +105,4 @@ predict_val(X_val, y_val)
 #
 #     return prediction
 #
-def predict_val(data, y):
-    prediction = []
-    for i in tqdm(range(0, len(X_val))):
-        y_p = clf.best_estimator_.predict(X[i:i+1])
-        prediction.append(y_p[0])
-    # print(f'{prediction}\n{list(y_val)}')
 
-    print(f'accuracy val {(prediction == y_val).sum()/len(X_val)} accuracy train {clf.best_score_}')
-
-    return prediction
-
-predict_val(X_val, y_val)
