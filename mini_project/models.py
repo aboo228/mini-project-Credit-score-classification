@@ -13,18 +13,22 @@ from sklearn.metrics import accuracy_score
 path = r'train_df.csv'
 train_df = pd.read_csv('train_df.csv')
 train_df.drop('Customer_ID',axis=1,inplace=True)
+train_df.drop('Num_of_Delayed_Payment',axis=1,inplace=True)
+''''''
+
 convert_dict = {'Poor': 0, 'Standard': 1, 'Good': 2}
 for (label, num) in convert_dict.items():
     train_df.loc[train_df.index[train_df.loc[:, 'Credit_Score'] == label], 'Credit_Score'] = num
 
 train_df.iloc[:, :-1] = train_df.iloc[:, :-1].astype('float32')
-train_df.iloc[:, 1] = train_df.iloc[:, 1].astype('int32')
+# train_df.iloc[:, 1] = train_df.iloc[:, 1].astype('int32')
 
 instances_with_null = train_df.index[train_df.isnull().sum(axis=1) > 0]
 columns_with_null = train_df.columns[train_df.isnull().sum() > 0]
 instances_to_predict = train_df.iloc[instances_with_null, :]
+train_df.dropna(inplace=True)
 
-df_to_train = train_df.drop(instances_with_null, axis=0)
+
 
 x_train, x_test, y_train, y_test = train_test_split(df_to_train.iloc[:, :17], df_to_train.iloc[:, -1],stratify=df_to_train.iloc[:, -1])
 y_train=y_train.to_numpy().astype(np.float32)
@@ -53,8 +57,8 @@ def objective(trial):
     # else:
     #     dim_reduc_algo = 'passthrough'
     # # integer from 1 to 19 with steps of 2
-    knn_n_neighbors = trial.suggest_int('knn_n_neighbors', 281, 351, 2)
-    knn_metric = trial.suggest_categorical('knn_metric', ['euclidean', 'manhattan', 'minkowski'])
+    knn_n_neighbors = trial.suggest_int('knn_n_neighbors', 7, 15, 2)
+    knn_metric = trial.suggest_categorical('knn_metric', ['euclidean'])
     knn_weights = trial.suggest_categorical('knn_weights', ['uniform', 'distance'])
 
     estimator = KNeighborsClassifier(n_neighbors=knn_n_neighbors, metric=knn_metric, weights=knn_weights)
@@ -63,21 +67,23 @@ def objective(trial):
     pipeline = make_pipeline(scaler, estimator)
 
     # evaluate score by cross_validation
-    score = cross_val_score(pipeline, x_train, y_train)
+    score = cross_val_score(pipeline, x_train, y_train,cv=10)
     # f1 = score()
     return score.mean()
 
 
 
 study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=100)
+study.optimize(objective, n_trials=10)
 print(study.best_trial)
 
-def objective():
-    max_depth=int(trial.suggest_loguniform('max_depth',1,4))
-    n_estimators = trial.suggest_int('n_estimators',10,500)
+def objectivetree(trial):
+    max_depth=int(trial.suggest_discrete_uniform('max_depth',1,5,1))
+    n_estimators = trial.suggest_int('n_estimators',10,700)
     model=RandomForestClassifier(n_estimators=n_estimators,max_depth=max_depth)
-    return cross_val_score(model,x_train,y_train,cv=5).mean()
+    return cross_val_score(model,x_train,y_train,cv=10).mean()
 
 tree_study=optuna.create_study(direction='maximize')
-tree_study.optimize(objective, n_trials=10)
+tree_study.optimize(objectivetree, n_trials=10)
+print(tree_study.best_trial)
+
