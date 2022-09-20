@@ -21,31 +21,51 @@ import optuna
 # import Credit_Score_Classification.py
 
 path = r'train_df.csv'
-train_df = pd.read_csv('train_df.csv')
+train_df2 = pd.read_csv('train_df.csv')
 '''convert target values to numbers: poor:0 ,standard:1, good:2'''
 # Payment_of_Min_Amount_get_dummies = pd.get_dummies(df['Payment_of_Min_Amount'], drop_first=True)
 # df = pd.concat([df, Payment_of_Min_Amount_get_dummies], axis=1)
-train_df.drop('Customer_ID', axis=1, inplace=True)
+train_df2.drop('Customer_ID', axis=1, inplace=True)
 convert_dict = {'Poor': 0, 'Standard': 1, 'Good': 2}
 for (label, num) in convert_dict.items():
-    train_df.loc[train_df.index[train_df.loc[:, 'Credit_Score'] == label], 'Credit_Score'] = num
+    train_df2.loc[train_df2.index[train_df2.loc[:, 'Credit_Score'] == label], 'Credit_Score'] = num
 
 # df = df.astype('float64')
 #
 #
 # df_to_train = df[~df['Amount_invested_monthly'].isnull()]
 # df_to_train = df_to_train[~[df_to_train['Amount_invested_monthly'] == 10000.00000][0]]
-instances_with_null = train_df.index[train_df.isnull().sum(axis=1) > 0]
-columns_with_null = train_df.columns[train_df.isnull().sum() > 0]
-instances_to_predict = train_df.iloc[instances_with_null, :]
+instances_with_null = train_df2.index[train_df2.isnull().sum(axis=1) > 0]
+columns_with_null = train_df2.columns[train_df2.isnull().sum() > 0]
+instances_to_predict = train_df2.iloc[instances_with_null, :]
 
-df_to_train = train_df.drop(instances_with_null, axis=0)
+# df_to_train = train_df.drop(instances_with_null, axis=0)
+
+
+train_df2.dropna(inplace=True)
+
+columns_to_remove_outleirs = train_df2.columns[1:17]
+q1 = None
+q3 = None
+iqr = None
+upper = None
+lower = None
+
+for column in tqdm(columns_to_remove_outleirs):
+    q1 = train_df2.loc[:, column].quantile(0.25)
+    q3 = train_df2.loc[:, column].quantile(0.75)
+    iqr = q3 - q1
+    upper = q3 + 2.5 * iqr
+    lower = q1 - 2.5 * iqr
+    train_df2 = train_df2[train_df2.loc[:, column] < upper]
+    train_df2 = train_df2[train_df2.loc[:, column] > lower]
+
 '''drop Credit_History_Age'''
 
 # df_to_train.drop('Credit_Score',axis=1,inplace=True)
 
 
-describe = df_to_train.describe()
+df_to_train=train_df2
 
 
 # def objective()
@@ -55,18 +75,18 @@ class Model(nn.Module):
     def __init__(self, input_size, num_classes):
         super(Model, self).__init__()
         self.fc1 = nn.Linear(input_size, 50)
-        self.fc2 = nn.Dropout(0.5)
-        self.fc3 = nn.Linear(50, 180)
-        self.fc4 = nn.Dropout(0.4)
-        self.fc5 = nn.Linear(180, input_size)
-        self.fc6 = nn.Linear(input_size, num_classes)
+        # self.fc2 = nn.Dropout(0.5)
+        self.fc3 = nn.Linear(50, 220)
+        # self.fc4 = nn.Dropout(0.4)
+        self.fc5 = nn.Linear(220, 30)
+        self.fc6 = nn.Linear(30, num_classes)
 
     def forward(self, x):
         x = self.fc1(x)
-        # x=torch.sigmoid(x)
-        x = self.fc2(x)
+        x=nn.functional.leaky_relu(x)
+        # x = self.fc2(x)
         x = self.fc3(x)
-        x = self.fc4(x)
+        # x = self.fc4(x)
         x = self.fc5(x)
         x = torch.sigmoid(x)
         x = self.fc6(x)
@@ -92,9 +112,9 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using {device} device")
 '''Hyperparameters'''
 num_classes = 3
-learning_rate = 0.00001
-batch_size = 64 ** 2
-num_epochs = 10000
+learning_rate = 0.001
+batch_size = 64**2
+num_epochs = 100
 
 '''load data'''
 target = pd.DataFrame(df_to_train['Credit_Score']).to_numpy()
@@ -136,6 +156,8 @@ for epoch in tqdm(range(num_epochs)):
             plt.scatter(epoch, loss.item())
             losses.append(loss.item())
             print(f'epoch:{epoch}\t,iter: {batch_idc}\t,loss:{loss.item()} ')
+        elif loss.item()<0.2:
+            torch.sa
         loss.backward()
         # gradient descent or adam step
         optimizer.step()

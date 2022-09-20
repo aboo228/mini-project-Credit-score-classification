@@ -37,8 +37,22 @@ train=train.drop(instances_with_null,axis=0)
 # train=train.iloc[:,1:]
 test_pred=None
 train_pred=None
-
-# for column in columns_with_null:
+# q1 = None
+# q3 = None
+# iqr = None
+# upper = None
+# lower = None
+#
+# for column in tqdm(columns_to_remove_outleirs):
+#     q1 = train.loc[:, column].quantile(0.25)
+#     q3 = train.loc[:, column].quantile(0.75)
+#     iqr = q3 - q1
+#     upper = q3 + 1.5 * iqr
+#     lower = q1 - 1.5 * iqr
+#     train = train[train.loc[:, column] < upper]
+#     train = train[train.loc[:, column] > lower]
+#
+# # for column in columns_with_null:
 #     train_na=train.drop(column,axis=1)
 #     x_train,x_test,y_train,y_test= train_test_split(train.drop(column,axis=1),train.loc[:,column],test_size=0.2,random_state=42)
 #
