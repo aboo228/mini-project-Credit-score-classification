@@ -76,10 +76,10 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.fc1 = nn.Linear(input_size, 50)
         # self.fc2 = nn.Dropout(0.5)
-        self.fc3 = nn.Linear(50, 220)
+        self.fc3 = nn.Linear(50, 180)
         # self.fc4 = nn.Dropout(0.4)
-        self.fc5 = nn.Linear(220, 30)
-        self.fc6 = nn.Linear(30, num_classes)
+        self.fc5 = nn.Linear(180, input_size)
+        self.fc6 = nn.Linear(input_size, num_classes)
 
     def forward(self, x):
         x = self.fc1(x)
