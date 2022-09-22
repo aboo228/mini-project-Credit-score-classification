@@ -23,19 +23,19 @@ iqr = None
 upper = None
 lower = None
 
-for column in tqdm(columns_to_remove_outleirs):
-    q1 = train_df2.loc[:, column].quantile(0.25)
-    q3 = train_df2.loc[:, column].quantile(0.75)
-    iqr = q3 - q1
-    upper = q3 + 2.5 * iqr
-    lower = q1 - 2.5 * iqr
-    train_df2 = train_df2[train_df2.loc[:, column] < upper]
-    train_df2 = train_df2[train_df2.loc[:, column] > lower]
+# for column in tqdm(columns_to_remove_outleirs):
+#     q1 = train_df2.loc[:, column].quantile(0.25)
+#     q3 = train_df2.loc[:, column].quantile(0.75)
+#     iqr = q3 - q1
+#     upper = q3 + 1.5 * iqr
+#     lower = q1 - 1.5 * iqr
+#     train_df2 = train_df2[train_df2.loc[:, column] < upper]
+#     train_df2 = train_df2[train_df2.loc[:, column] > lower]
 
 targetall_dum = pd.get_dummies(train_dfall.Credit_Score)
 target = pd.get_dummies(train_df2.Credit_Score)
 x_train, x_test, y_train, y_test = train_test_split(train_df2.iloc[:, 1:-1], target, test_size=0.25, stratify=target,
-                                                    random_state=2)
+                                                    random_state=42)
 pipe1 = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=7, metric='manhattan', weights='distance'))
 pipe2= make_pipeline(RobustScaler(),AdaBoostClassifier(base_estimator=DecisionTreeClassifier(max_depth=3),n_estimators=64*3) )
 pipe3 = make_pipeline(RobustScaler(), GradientBoostingClassifier(n_estimators=670,learning_rate=0.1))

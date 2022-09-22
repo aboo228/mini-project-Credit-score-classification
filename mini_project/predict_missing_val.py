@@ -141,42 +141,43 @@ criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 losses = []
 '''train network'''
-for epoch in tqdm(range(num_epochs)):
-    for batch_idc, (data, targets) in enumerate(train_loader):
-        # get data to cuda
-        data = data.to(device=device)
-        targets = targets.type(torch.LongTensor).to(device=device)
+if __name__ == '__main__':
+    for epoch in tqdm(range(num_epochs)):
+        for batch_idc, (data, targets) in enumerate(train_loader):
+            # get data to cuda
+            data = data.to(device=device)
+            targets = targets.type(torch.LongTensor).to(device=device)
 
-        #         forward
-        predictions = model(data)
-        loss = criterion(predictions, targets)
+            #         forward
+            predictions = model(data)
+            loss = criterion(predictions, targets)
 
-        # backward
-        if epoch > 0:
-            plt.scatter(epoch, loss.item())
-            losses.append(loss.item())
-            print(f'epoch:{epoch}\t,iter: {batch_idc}\t,loss:{loss.item()} ')
-        if loss.item()<0.1:
-            _=loss.item()
-            torch.save(model.state_dict(),'best_loss')
-            model_best_loss=Model(input_size=input_size, num_classes=num_classes)
-            model_best_loss.load_state_dict(torch.load('best_loss'))
-            break
-            loss.backward()
-            # gradient descent or adam step
-            optimizer.step()
-            optimizer.zero_grad(set_to_none=True)
+            # backward
+            if epoch > 0:
+                plt.scatter(epoch, loss.item())
+                losses.append(loss.item())
+                print(f'epoch:{epoch}\t,iter: {batch_idc}\t,loss:{loss.item()} ')
+            if loss.item()<0.1:
+                _=loss.item()
+                torch.save(model.state_dict(),'best_loss.pt')
+                model_best_loss=Model(input_size=input_size, num_classes=num_classes)
+                model_best_loss.load_state_dict(torch.load('best_loss'))
+                break
+                loss.backward()
+                # gradient descent or adam step
+                optimizer.step()
+                optimizer.zero_grad(set_to_none=True)
 
-xx_train = torch.tensor(x_train, dtype=torch.float32).to(device)
-xx_test = torch.tensor(x_test, dtype=torch.float32).to(device)
-with torch.no_grad():
-    x_train_pred = model(xx_train).to('cpu')
-    x_test_pred = model(xx_test).to('cpu')
-plt.show()
+    xx_train = torch.tensor(x_train, dtype=torch.float32).to(device)
+    xx_test = torch.tensor(x_test, dtype=torch.float32).to(device)
+    with torch.no_grad():
+        x_train_pred = model(xx_train).to('cpu')
+        x_test_pred = model(xx_test).to('cpu')
+    plt.show()
 
-acc_train = (torch.max(x_train_pred, 1)[1].numpy().reshape(-1, 1) == y_train).sum() / y_train.shape[0]
-acc_test = (torch.max(x_test_pred, 1)[1].numpy().reshape(-1, 1) == y_test).sum() / y_test.shape[0]
-print(f'train accuracy:{acc_train}\ntest accuracy:{acc_test}')
+    acc_train = (torch.max(x_train_pred, 1)[1].numpy().reshape(-1, 1) == y_train).sum() / y_train.shape[0]
+    acc_test = (torch.max(x_test_pred, 1)[1].numpy().reshape(-1, 1) == y_test).sum() / y_test.shape[0]
+    print(f'train accuracy:{acc_train}\ntest accuracy:{acc_test}')
 
 # img_grid=torchvision.utils.make_grid(torch.tensor(losses))
 # writer.add_image('loss',img_grid)
