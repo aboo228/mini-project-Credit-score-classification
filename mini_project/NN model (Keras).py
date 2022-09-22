@@ -16,7 +16,7 @@ train_df = train_df.dropna()
 train_df = train_df.drop(['Customer_ID'], axis=1)
 
 index_target_s = train_df[train_df['Credit_Score'] == 1].index
-train_df.drop(index_target_s[:23000], axis=0, inplace=True)
+train_df = train_df.drop(index_target_s[:50000], axis=0)
 
 convert_dict={'Poor':0,'Standard':1,'Good':2}
 for (label,num) in convert_dict.items():
@@ -29,14 +29,18 @@ X = train_df.drop(['Credit_Score'], axis=1)
 y = train_df['Credit_Score']
 y = pd.get_dummies(y)
 
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.1, random_state=42, shuffle=True)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, random_state=42, shuffle=True)
 
 # define the keras model
 
 model = Sequential()
-model.add(Dense(5000, activation='leaky_relu', input_dim=56))
+model.add(Dense(100, activation='leaky_relu', input_dim=56))
 model.add(Dropout(0.5))
-model.add(Dense(500, activation='leaky_relu'))
+model.add(Dense(200, activation='leaky_relu', input_dim=56))
+model.add(Dropout(0.5))
+model.add(Dense(300, activation='leaky_relu', input_dim=56))
+model.add(Dropout(0.5))
+model.add(Dense(400, activation='leaky_relu'))
 model.add(Dropout(0.5))
 model.add(Dense(500, activation='sigmoid'))
 model.add(Dense(3, activation='softmax'))
@@ -44,9 +48,9 @@ model.add(Dense(3, activation='softmax'))
 # model.add(Dense(1, activation='softmax'))
 # compile the keras model
 # tf.keras.optimizers.Adagrad
-model.compile(loss='categorical_crossentropy', optimizer=tf.keras.optimizers.Adam(learning_rate=0.003), metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001), metrics=['accuracy'])
 # fit the keras model on the dataset
-history = model.fit(X_train, y_train, epochs=25, batch_size=1000)
+history = model.fit(X_train, y_train, epochs=3, batch_size=1000)
 # evaluate the keras model
 _, accuracy = model.evaluate(X_train, y_train)
 print('Accuracy: %.2f' % (accuracy*100))
