@@ -19,7 +19,7 @@ import torchvision
 import optuna
 
 # import Credit_Score_Classification.py
-mytest=np.array([0,1,1])
+
 path = r'train_df.csv'
 train_df2 = pd.read_csv('train_df.csv')
 '''convert target values to numbers: poor:0 ,standard:1, good:2'''
