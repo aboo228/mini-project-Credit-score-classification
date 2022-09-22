@@ -19,8 +19,7 @@ import torchvision
 import optuna
 
 # import Credit_Score_Classification.py
-mytest=np.array([0,1,1])
-your_test = np.array([0, 1, 1])
+
 path = r'train_df.csv'
 train_df2 = pd.read_csv('train_df.csv')
 '''convert target values to numbers: poor:0 ,standard:1, good:2'''
@@ -45,21 +44,21 @@ instances_to_predict = train_df2.iloc[instances_with_null, :]
 
 train_df2.dropna(inplace=True)
 
-columns_to_remove_outleirs = train_df2.columns[1:17]
+columns_to_remove_outleirs = train_df2.columns[:17]
 q1 = None
 q3 = None
 iqr = None
 upper = None
 lower = None
 
-for column in tqdm(columns_to_remove_outleirs):
-    q1 = train_df2.loc[:, column].quantile(0.25)
-    q3 = train_df2.loc[:, column].quantile(0.75)
-    iqr = q3 - q1
-    upper = q3 + 1.5 * iqr
-    lower = q1 - 1.5 * iqr
-    train_df2 = train_df2[train_df2.loc[:, column] < upper]
-    train_df2 = train_df2[train_df2.loc[:, column] > lower]
+# for column in tqdm(columns_to_remove_outleirs):
+#     q1 = train_df2.loc[:, column].quantile(0.25)
+#     q3 = train_df2.loc[:, column].quantile(0.75)
+#     iqr = q3 - q1
+#     upper = q3 + 2 * iqr
+#     lower = q1 - 2 * iqr
+#     train_df2 = train_df2[train_df2.loc[:, column] < upper]
+#     train_df2 = train_df2[train_df2.loc[:, column] > lower]
 
 '''drop Credit_History_Age'''
 
@@ -78,7 +77,8 @@ class Model(nn.Module):
         self.fc1 = nn.Linear(input_size, 50)
         # self.fc2 = nn.Dropout(0.5)
         self.fc3 = nn.Linear(50, 180)
-        # self.fc4 = nn.Dropout(0.4)
+        # self.fc4 = nn.Linear(50, 180)
+
         self.fc5 = nn.Linear(180, input_size)
         self.fc6 = nn.Linear(input_size, num_classes)
 
@@ -107,15 +107,15 @@ class Df(Dataset):
         return self.instances
 
 
-df_to_train.iloc[:, :-1] = df_to_train.iloc[:, :-1].astype(np.float32)
+df_to_train.iloc[:,:-1] = df_to_train.iloc[:,:-1].astype(np.float32)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using {device} device")
 '''Hyperparameters'''
 num_classes = 3
-learning_rate = 0.001
+learning_rate = 0.0001
 batch_size = 64**2
-num_epochs = 2
+num_epochs = 10000
 
 '''load data'''
 target = pd.DataFrame(df_to_train['Credit_Score']).to_numpy()
@@ -130,7 +130,7 @@ x_train = scaler.fit_transform(x_train)
 x_test = scaler.transform(x_test)
 df = Df()
 
-train_loader = DataLoader(dataset=df, batch_size=None, shuffle=False)
+train_loader = DataLoader(dataset=df, batch_size=batch_size, shuffle=False)
 # test_loader=DataLoader(dataset=df,batch_size=batch_size,shuffle=False)
 # train_loader=DataLoader(dataset=tuple(zip(x_train,y_train)),batch_size=batch_size,shuffle=False)
 # test_loader=DataLoader(dataset=tuple(zip(x_test.to_numpy(),y_test.to_numpy())),batch_size=batch_size,shuffle=False)
@@ -158,16 +158,16 @@ if __name__ == '__main__':
                 plt.scatter(epoch, loss.item())
                 losses.append(loss.item())
                 print(f'epoch:{epoch}\t,iter: {batch_idc}\t,loss:{loss.item()} ')
-            if loss.item()<0.1:
+            if loss.item()<0.10:
                 _=loss.item()
-                torch.save(model.state_dict(),'best_loss.pt')
+                torch.save(model.state_dict(),'best_loss2.pt')
                 model_best_loss=Model(input_size=input_size, num_classes=num_classes)
                 model_best_loss.load_state_dict(torch.load('best_loss'))
                 break
-                loss.backward()
+            loss.backward()
                 # gradient descent or adam step
-                optimizer.step()
-                optimizer.zero_grad(set_to_none=True)
+            optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
 
     xx_train = torch.tensor(x_train, dtype=torch.float32).to(device)
     xx_test = torch.tensor(x_test, dtype=torch.float32).to(device)
