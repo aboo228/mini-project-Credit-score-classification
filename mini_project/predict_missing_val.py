@@ -55,8 +55,8 @@ for column in tqdm(columns_to_remove_outleirs):
     q1 = train_df2.loc[:, column].quantile(0.25)
     q3 = train_df2.loc[:, column].quantile(0.75)
     iqr = q3 - q1
-    upper = q3 + 2 * iqr
-    lower = q1 - 2 * iqr
+    upper = q3 + 1.5 * iqr
+    lower = q1 - 1.5 * iqr
     train_df2 = train_df2[train_df2.loc[:, column] < upper]
     train_df2 = train_df2[train_df2.loc[:, column] > lower]
 
