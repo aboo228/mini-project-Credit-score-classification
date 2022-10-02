@@ -24,14 +24,14 @@ iqr = None
 upper = None
 lower = None
 
-for column in tqdm(columns_to_remove_outleirs):
-    q1 = train_df2.loc[:, column].quantile(0.25)
-    q3 = train_df2.loc[:, column].quantile(0.75)
-    iqr = q3 - q1
-    upper = q3 + 2.5 * iqr
-    lower = q1 - 2.5 * iqr
-    train_df2 = train_df2[train_df2.loc[:, column] < upper]
-    train_df2 = train_df2[train_df2.loc[:, column] > lower]
+# for column in tqdm(columns_to_remove_outleirs):
+#     q1 = train_df2.loc[:, column].quantile(0.25)
+#     q3 = train_df2.loc[:, column].quantile(0.75)
+#     iqr = q3 - q1
+#     upper = q3 + 2.5 * iqr
+#     lower = q1 - 2.5 * iqr
+#     train_df2 = train_df2[train_df2.loc[:, column] < upper]
+#     train_df2 = train_df2[train_df2.loc[:, column] > lower]
 
 targetall_dum = pd.get_dummies(train_dfall.Credit_Score)
 target = pd.get_dummies(train_df2.Credit_Score)
@@ -77,7 +77,8 @@ y_test=np.argmax(y_test.to_numpy(),axis=1)
 import torch
 from predict_missing_val import model as deepmodel
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-deepmodel.load_state_dict(torch.load('best_loss'))
+deepmodel.load_state_dict(torch.load('best_loss24.pt'))
+deepmodel.parameters().close()
 deepred_train=torch.argmax(deepmodel(torch.tensor(x_train.to_numpy(),dtype=torch.float32).to('cuda')),axis=1)
 deepred_test=torch.argmax(deepmodel(torch.tensor(x_test.to_numpy(),dtype=torch.float32).to('cuda')),axis=1)
 deepred_all=torch.argmax(deepmodel(torch.tensor(train_dfall.iloc[:, :-1].to_numpy(),dtype=torch.float32).to('cuda')),axis=1)

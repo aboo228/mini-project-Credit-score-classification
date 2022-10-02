@@ -53,7 +53,7 @@ neigh = NearestNeighbors(n_neighbors=9)
 neigh.fit(X_train)
 # print(f'neigh:  best_score {clf.best_score_} best_params {clf.best_params_}')
 
-neigh.score(X_val, y_val)
+# neigh.score(X_val, y_val)
 
 # predict_val(X_val, y_val)
 predict(X_val)

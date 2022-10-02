@@ -15,7 +15,6 @@ train_df = pd.read_csv('train_df.csv')
 train_df.drop('Customer_ID',axis=1,inplace=True)
 train_df.drop('Num_of_Delayed_Payment',axis=1,inplace=True)
 ''''''
-
 convert_dict = {'Poor': 0, 'Standard': 1, 'Good': 2}
 for (label, num) in convert_dict.items():
     train_df.loc[train_df.index[train_df.loc[:, 'Credit_Score'] == label], 'Credit_Score'] = num
@@ -28,6 +27,7 @@ columns_with_null = train_df.columns[train_df.isnull().sum() > 0]
 instances_to_predict = train_df.iloc[instances_with_null, :]
 train_df.dropna(inplace=True)
 
+df_to_train=train_df
 
 
 x_train, x_test, y_train, y_test = train_test_split(df_to_train.iloc[:, :17], df_to_train.iloc[:, -1],stratify=df_to_train.iloc[:, -1])

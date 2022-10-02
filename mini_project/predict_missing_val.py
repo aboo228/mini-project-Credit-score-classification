@@ -74,9 +74,9 @@ df_to_train=train_df2
 class Model(nn.Module):
     def __init__(self, input_size, num_classes):
         super(Model, self).__init__()
-        self.fc1 = nn.Linear(input_size, 50)
+        self.fc1 = nn.Linear(input_size, 60)
         # self.fc2 = nn.Dropout(0.5)
-        self.fc3 = nn.Linear(50, 180)
+        self.fc3 = nn.Linear(60, 180)
         # self.fc4 = nn.Linear(50, 180)
 
         self.fc5 = nn.Linear(180, input_size)
@@ -89,7 +89,8 @@ class Model(nn.Module):
         x = self.fc3(x)
         # x = self.fc4(x)
         x = self.fc5(x)
-        x = torch.sigmoid(x)
+        x = nn.functional.leaky_relu(x)
+        # x=nn.functional.relu(x)
         x = self.fc6(x)
         return x
 
@@ -113,9 +114,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using {device} device")
 '''Hyperparameters'''
 num_classes = 3
-learning_rate = 0.0001
-batch_size = 64**2
-num_epochs = 10000
+learning_rate = 0.01
+num_epochs = 200
 
 '''load data'''
 target = pd.DataFrame(df_to_train['Credit_Score']).to_numpy()
@@ -124,6 +124,7 @@ input_size = df_to_train.shape[1] - 1
 # Y=pd.get_dummies(df_to_train['Credit_Score']).to_numpy()
 x_train, x_test, y_train, y_test = train_test_split(df_to_train.drop('Credit_Score', axis=1), target, random_state=42,
                                                     stratify=target)
+batch_size = round(x_train.shape[0])
 
 scaler = StandardScaler()
 x_train = scaler.fit_transform(x_train)
@@ -158,7 +159,7 @@ if __name__ == '__main__':
                 plt.scatter(epoch, loss.item())
                 losses.append(loss.item())
                 print(f'epoch:{epoch}\t,iter: {batch_idc}\t,loss:{loss.item()} ')
-            if loss.item()<0.10:
+            if loss.item()<0.20:
                 _=loss.item()
                 torch.save(model.state_dict(),'best_loss2.pt')
                 model_best_loss=Model(input_size=input_size, num_classes=num_classes)
