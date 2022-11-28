@@ -4,15 +4,11 @@ from tqdm import tqdm
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression, SGDRegressor, LogisticRegression
-from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import RobustScaler, StandardScaler
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
-# from torchvision import datasets, transforms
 from tqdm import trange, tqdm
 from torch.utils.tensorboard import SummaryWriter
 import torchvision
@@ -114,8 +110,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using {device} device")
 '''Hyperparameters'''
 num_classes = 3
-learning_rate = 0.01
-num_epochs = 200
+learning_rate = 0.0033
+num_epochs = 2000
 
 '''load data'''
 target = pd.DataFrame(df_to_train['Credit_Score']).to_numpy()

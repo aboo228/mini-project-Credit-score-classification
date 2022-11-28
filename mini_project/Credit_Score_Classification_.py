@@ -185,8 +185,8 @@ train_df.iloc[train_df.index[train_df.iloc[:, 17].astype('float32') > 5000000000
 train_df.iloc[:, :] = train_df.iloc[:, :].replace('nan', None)
 train_df.iloc[:, 18:36] = train_df.iloc[:, 18:36].astype('int32')
 train_df.iloc[:, 2] = train_df.iloc[:, 2].astype('float32')
-col_to_float=train_df.dtypes.where(train_df.drop('Customer_ID',axis=1).dtypes=='O').dropna().index
-train_df.loc[:,col_to_float] = train_df.loc[:,col_to_float].astype('float32')
+col_to_float = train_df.dtypes.where(train_df.drop('Customer_ID', axis=1).dtypes == 'O').dropna().index
+train_df.loc[:, col_to_float] = train_df.loc[:, col_to_float].astype('float32')
 
 '''predict missing values'''
 
@@ -244,14 +244,13 @@ annual_invalid_values_ind = train_df.Annual_Income.index[
     train_df.Annual_Income.where(train_df.Customer_ID.isin(customer_annual_out)) > 200000]
 
 '''check num credit inquiries'''
-custid_numcredit_outlier=(train_df.groupby('Customer_ID').Num_Credit_Inquiries.std())\
-    [train_df.groupby('Customer_ID').Num_Credit_Inquiries.std()>10].index
+custid_numcredit_outlier = (train_df.groupby('Customer_ID').Num_Credit_Inquiries.std()) \
+    [train_df.groupby('Customer_ID').Num_Credit_Inquiries.std() > 10].index
 
-df_numcredit_check_outliers=train_df.iloc[:,:16].where(train_df.Customer_ID.isin(custid_numcredit_outlier)).dropna()
+df_numcredit_check_outliers = train_df.iloc[:, :16].where(train_df.Customer_ID.isin(custid_numcredit_outlier)).dropna()
 
-
-df_numcredit_out_percustomer=train_df.Num_Credit_Inquiries.index\
-    [train_df.Num_Credit_Inquiries.where(train_df.Customer_ID.isin(custid_numcredit_outlier))>30]
+df_numcredit_out_percustomer = train_df.Num_Credit_Inquiries.index \
+    [train_df.Num_Credit_Inquiries.where(train_df.Customer_ID.isin(custid_numcredit_outlier)) > 30]
 '''check num of delyed payment'''
 # num_delayed_q1=train_df.groupby('Customer_ID').Num_of_Delayed_Payment.quantile(q=0.25)
 # num_delayed_q3=train_df.groupby('Customer_ID').Num_of_Delayed_Payment.quantile(q=0.75)
@@ -259,18 +258,22 @@ df_numcredit_out_percustomer=train_df.Num_Credit_Inquiries.index\
 # upper_fence=num_delayed_q3+1.5*num_delayed_iqr
 # lower_fence=num_delayed_q1-1.5*num_delayed_iqr
 
-custid_delayed_pay=train_df.groupby('Customer_ID').Num_of_Delayed_Payment.std()[train_df.groupby('Customer_ID').Num_of_Delayed_Payment.std() > 10].index
+custid_delayed_pay = train_df.groupby('Customer_ID').Num_of_Delayed_Payment.std()[
+    train_df.groupby('Customer_ID').Num_of_Delayed_Payment.std() > 10].index
 
-df_delay_pay_check=train_df[['Customer_ID','Num_of_Delayed_Payment']].where(train_df.Customer_ID.isin(custid_delayed_pay)).dropna()
+df_delay_pay_check = train_df[['Customer_ID', 'Num_of_Delayed_Payment']].where(
+    train_df.Customer_ID.isin(custid_delayed_pay)).dropna()
 sns.boxplot(train_df.Num_of_Delayed_Payment)
 plt.show()
-indicators_to_delayedpay=df_delay_pay_check.Num_of_Delayed_Payment[df_delay_pay_check.Num_of_Delayed_Payment>99].index
-
+indicators_to_delayedpay = df_delay_pay_check.Num_of_Delayed_Payment[
+    df_delay_pay_check.Num_of_Delayed_Payment > 99].index
 
 indicators_to_val = [emi_invalid_values, intr_rate_invalid_values, \
-                                  annual_invalid_values_ind,df_numcredit_out_percustomer,indicators_to_delayedpay]
-columns_to_updateval=['Total_EMI_per_month', 'Interest_Rate', 'Annual_Income','Num_Credit_Inquiries','Num_of_Delayed_Payment']
-customer_ids=[customer_emi_outlier, customerid_inter_rate, customer_annual_out,custid_numcredit_outlier,custid_delayed_pay]
+                     annual_invalid_values_ind, df_numcredit_out_percustomer, indicators_to_delayedpay]
+columns_to_updateval = ['Total_EMI_per_month', 'Interest_Rate', 'Annual_Income', 'Num_Credit_Inquiries',
+                        'Num_of_Delayed_Payment']
+customer_ids = [customer_emi_outlier, customerid_inter_rate, customer_annual_out, custid_numcredit_outlier,
+                custid_delayed_pay]
 
 # start_index = None
 # end_index = None
@@ -344,14 +347,13 @@ df_annual_incomeandemi_check = \
 # train_df.groupby('Customer_ID').Total_EMI_per_month
 # train_df.groupby('Customer_ID').Total_EMI_per_month.
 
-columns_to_boxplot=train_df.columns[1:18]
-columns_to_remove_outleirs=train_df.columns[2:18]
-q1=None
-q3=None
-iqr=None
-upper=None
-lower=None
-
+columns_to_boxplot = train_df.columns[1:18]
+columns_to_remove_outleirs = train_df.columns[2:18]
+q1 = None
+q3 = None
+iqr = None
+upper = None
+lower = None
 
 # for column in tqdm(columns_to_remove_outleirs):
 #     q1=train_df.loc[:,column].quantile(0.25)
@@ -364,37 +366,36 @@ lower=None
 
 train_df.to_csv('train_df.csv', index=False)
 
-
 #
 # for i in columns_to_boxplot:
 #     sns.boxplot(train_df.loc[:,i])
 #     plt.show()
 #
-train_df2=train_df
+train_df2 = train_df
 for column in tqdm(columns_to_remove_outleirs):
-    q1=train_df2.loc[:,column].quantile(0.25)
-    q3=train_df2.loc[:, column].quantile(0.75)
-    iqr=q3-q1
-    upper=q3+1.5*iqr
-    lower=q1-1.5*iqr
-    train_df2=train_df2[train_df2.loc[:,column]<upper]
-    train_df2=train_df2[train_df2.loc[:,column]>lower]
+    q1 = train_df2.loc[:, column].quantile(0.25)
+    q3 = train_df2.loc[:, column].quantile(0.75)
+    iqr = q3 - q1
+    upper = q3 + 1.5 * iqr
+    lower = q1 - 1.5 * iqr
+    train_df2 = train_df2[train_df2.loc[:, column] < upper]
+    train_df2 = train_df2[train_df2.loc[:, column] > lower]
 # print(train_df2.shape)
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier,GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import RobustScaler, StandardScaler
 from sklearn.pipeline import make_pipeline
-
 
 # convert_dict={'Poor':0,'Standard':1,'Good':2}
 # for (label,num) in convert_dict.items():
 #     train_df2.loc[train_df2.index[train_df2.loc[:,'Credit_Score']==label],'Credit_Score']=num
 
-target=pd.get_dummies(train_df2.Credit_Score)
-x_train,x_test, y_train, y_test = train_test_split(train_df2.iloc[:,1:-1],target,test_size=0.25,stratify=target, random_state=42)
+target = pd.get_dummies(train_df2.Credit_Score)
+x_train, x_test, y_train, y_test = train_test_split(train_df2.iloc[:, 1:-1], target, test_size=0.25, stratify=target,
+                                                    random_state=42)
 # modelknn=KNeighborsClassifier(n_neighbors=9,metric='manhattan',weights='distance')
 # modeldecisiontree=DecisionTreeClassifier()
 # modelrandom=RandomForestClassifier(n_estimators=64*3)
